@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+
+# IDEs
+.vscode/
+.idea/
+
+# Environment
+.env
+*.local
+
+# Build
+dist/
+build/
+*.log
+
+# Project specific
+backend/bcv_cache.json
+backend/pagos/
+backend/pin.json
+backend/webauthn.json
+backend/colaboradores.json
+backend/pagos_index.json

@@ -1,0 +1,13 @@
+{
+  "name": "braimar-backend",
+  "version": "1.0.0",
+  "description": "Backend for Braimar project",
+  "main": "main.py",
+  "scripts": {
+    "dev": "portless run --app-port 8081 venv\\Scripts\\python.exe -m uvicorn main:app --port 8081",
+    "start": "venv\\Scripts\\python.exe -m uvicorn main:app --port 8081"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

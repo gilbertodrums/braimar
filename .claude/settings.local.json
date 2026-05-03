@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s http://localhost:8080/bcv-rate)",
+      "Bash(where Antigravity)",
+      "Read(//c/Users/Gilbert/AppData/Local/Programs/Antigravity/**)",
+      "Read(//c/Program Files/**)",
+      "Read(//c/Users/Gilbert/**)"
+    ]
+  }
+}
