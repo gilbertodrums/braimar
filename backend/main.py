@@ -17,6 +17,7 @@ import json
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from supabase import create_client, Client
 import httpx
 import time
 from webauthn import (
@@ -56,11 +57,15 @@ if not SECRET_KEY:
 ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
 ALGORITHM = "HS256"
 
+# Supabase Initialization
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_KEY")
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise RuntimeError("Configuración de Supabase no encontrada en .env")
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
 PIN_FILE = Path(__file__).parent / "pin.json"
-COLABORADORES_FILE = Path(__file__).parent / "colaboradores.json"
 BCV_CACHE_FILE = Path(__file__).parent / "bcv_cache.json"
-PAGOS_INDEX_FILE = Path(__file__).parent / "pagos_index.json"
-PAGOS_DIR = Path(__file__).parent / "pagos"
 WEBAUTHN_FILE = Path(__file__).parent / "webauthn.json"
 
 # Challenge temporal en memoria (sistema monousuario)
@@ -205,26 +210,20 @@ class GuardarPagoRequest(BaseModel):
     pdf_base64: str
 
 def _read_colaboradores() -> list:
-    if COLABORADORES_FILE.exists():
-        try:
-            return json.loads(COLABORADORES_FILE.read_text(encoding="utf-8"))
-        except Exception:
-            return []
-    return []
-
-def _write_colaboradores(data: list):
-    COLABORADORES_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    try:
+        response = supabase.table("colaboradores").select("*").execute()
+        return response.data or []
+    except Exception as e:
+        logging.error(f"Error reading from Supabase: {e}")
+        return []
 
 def _read_pagos_index() -> list:
-    if PAGOS_INDEX_FILE.exists():
-        try:
-            return json.loads(PAGOS_INDEX_FILE.read_text(encoding="utf-8"))
-        except Exception:
-            return []
-    return []
-
-def _write_pagos_index(data: list):
-    PAGOS_INDEX_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    try:
+        response = supabase.table("pagos").select("*").execute()
+        return response.data or []
+    except Exception as e:
+        logging.error(f"Error reading pagos from Supabase: {e}")
+        return []
 
 @app.post("/login")
 @limiter.limit("5/15minute")
@@ -306,12 +305,13 @@ async def create_colaborador(
 ):
     if not verify_session(braimar_session):
         raise HTTPException(status_code=401, detail="Sesión inválida o expirada")
-    data = _read_colaboradores()
     nuevo = payload.model_dump()
     nuevo["id"] = str(uuid.uuid4())
-    data.append(nuevo)
-    _write_colaboradores(data)
-    return nuevo
+    try:
+        response = supabase.table("colaboradores").insert(nuevo).execute()
+        return response.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.put("/colaboradores/{colaborador_id}")
 async def update_colaborador(
@@ -321,15 +321,14 @@ async def update_colaborador(
 ):
     if not verify_session(braimar_session):
         raise HTTPException(status_code=401, detail="Sesión inválida o expirada")
-    data = _read_colaboradores()
-    for i, c in enumerate(data):
-        if c["id"] == colaborador_id:
-            updated = payload.model_dump()
-            updated["id"] = colaborador_id
-            data[i] = updated
-            _write_colaboradores(data)
-            return updated
-    raise HTTPException(status_code=404, detail="Colaborador no encontrado")
+    updated = payload.model_dump()
+    try:
+        response = supabase.table("colaboradores").update(updated).eq("id", colaborador_id).execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Colaborador no encontrado")
+        return response.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/colaboradores/{colaborador_id}", status_code=204)
 async def delete_colaborador(
@@ -338,20 +337,23 @@ async def delete_colaborador(
 ):
     if not verify_session(braimar_session):
         raise HTTPException(status_code=401, detail="Sesión inválida o expirada")
-    data = _read_colaboradores()
-    filtered = [c for c in data if c["id"] != colaborador_id]
-    if len(filtered) == len(data):
-        raise HTTPException(status_code=404, detail="Colaborador no encontrado")
-    _write_colaboradores(filtered)
+    
+    # 1. Obtener pagos asociados para borrar sus PDFs en Supabase Storage
+    try:
+        pagos_resp = supabase.table("pagos").select("id").eq("colaborador_id", colaborador_id).execute()
+        if pagos_resp.data:
+            archivos_pdf = [f"{p['id']}.pdf" for p in pagos_resp.data]
+            supabase.storage.from_("pagos").remove(archivos_pdf)
+    except Exception as e:
+        logging.error(f"Error borrando PDFs asociados al colaborador {colaborador_id}: {e}")
 
-    # Eliminar todos los pagos/PDFs del colaborador
-    index = _read_pagos_index()
-    for p in index:
-        if p["colaborador_id"] == colaborador_id:
-            pdf_path = PAGOS_DIR / f"{p['id']}.pdf"
-            if pdf_path.exists():
-                pdf_path.unlink()
-    _write_pagos_index([p for p in index if p["colaborador_id"] != colaborador_id])
+    # 2. Borrar el colaborador (los pagos se borran por CASCADE en la base de datos)
+    try:
+        response = supabase.table("colaboradores").delete().eq("id", colaborador_id).execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Colaborador no encontrado")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/pagos", status_code=201)
 async def guardar_pago(
@@ -361,10 +363,18 @@ async def guardar_pago(
     if not verify_session(braimar_session):
         raise HTTPException(status_code=401, detail="Sesión inválida o expirada")
 
-    PAGOS_DIR.mkdir(exist_ok=True)
     pago_id = str(uuid.uuid4())
     pdf_bytes = base64.b64decode(payload.pdf_base64)
-    (PAGOS_DIR / f"{pago_id}.pdf").write_bytes(pdf_bytes)
+    
+    # Subir PDF a Supabase Storage
+    try:
+        supabase.storage.from_("pagos").upload(
+            f"{pago_id}.pdf", 
+            pdf_bytes, 
+            file_options={"content-type": "application/pdf"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error subiendo PDF: {str(e)}")
 
     now = _vet_now()
     entrada = {
@@ -374,11 +384,17 @@ async def guardar_pago(
         "hasta": payload.hasta,
         "total": payload.total,
         "fecha_generado": now.strftime("%Y-%m-%d"),
-        "hora_generado": now.strftime("%H:%M"),
+        "hora_generado": now.strftime("%H:%M:%S"),
     }
-    index = _read_pagos_index()
-    index.append(entrada)
-    _write_pagos_index(index)
+    
+    # Guardar registro en base de datos
+    try:
+        supabase.table("pagos").insert(entrada).execute()
+    except Exception as e:
+        # Intento de rollback: borrar PDF subido
+        supabase.storage.from_("pagos").remove([f"{pago_id}.pdf"])
+        raise HTTPException(status_code=500, detail=f"Error guardando registro de pago: {str(e)}")
+
     return entrada
 
 @app.get("/pagos")
@@ -400,11 +416,14 @@ async def obtener_pdf(
 ):
     if not verify_session(braimar_session):
         raise HTTPException(status_code=401, detail="Sesión inválida o expirada")
-    pdf_path = PAGOS_DIR / f"{pago_id}.pdf"
-    if not pdf_path.exists():
-        raise HTTPException(status_code=404, detail="PDF no encontrado")
-    return FileResponse(path=str(pdf_path), media_type="application/pdf",
-                        filename=f"recibo_{pago_id}.pdf")
+    
+    try:
+        pdf_bytes = supabase.storage.from_("pagos").download(f"{pago_id}.pdf")
+        return Response(content=pdf_bytes, media_type="application/pdf", headers={
+            "Content-Disposition": f'inline; filename="recibo_{pago_id}.pdf"'
+        })
+    except Exception as e:
+        raise HTTPException(status_code=404, detail="PDF no encontrado o error en Supabase")
 
 @app.get("/finanzas")
 async def get_finanzas(braimar_session: Optional[str] = Cookie(default=None)):
