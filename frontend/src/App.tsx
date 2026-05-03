@@ -124,7 +124,7 @@ function ColaboradorForm({ inicial, onGuardar, onCancelar, bcvRate }: {
       {/* Sueldo */}
       <div className="flex flex-col gap-1">
         <label className="text-white/50 text-[10px] px-0.5 flex items-center gap-1">
-          <Banknote size={10} /> Sueldo (Bs.)
+          <Banknote size={10} /> Sueldo (USD)
         </label>
         <div className="relative">
           <input
@@ -139,21 +139,20 @@ function ColaboradorForm({ inicial, onGuardar, onCancelar, bcvRate }: {
         </div>
         {/* Conversión en tiempo real */}
         {(() => {
-          const bs = parseFloat(form.sueldo);
-          if (!bs || bs <= 0) return null;
-          const usd = bcvRate ? bs / bcvRate : null;
+          const usd = parseFloat(form.sueldo);
+          if (!usd || usd <= 0) return null;
+          const bs = bcvRate ? usd * bcvRate : null;
           return (
             <div className="flex items-center gap-2 mt-1 px-0.5">
-              <span className="text-white/40 text-[10px]">
-                Bs. {bs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              <span className="text-white/40 text-[10px] font-medium">
+                $ {usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
               </span>
-              {usd !== null && (
+              {bs !== null && (
                 <>
                   <span className="text-white/20 text-[9px]">≈</span>
-                  <span className="text-white/70 text-[10px] font-medium">
-                    $ {usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  <span className="text-white/70 text-[10px]">
+                    Bs. {bs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
-                  <span className="text-white/30 text-[9px]">USD</span>
                 </>
               )}
             </div>
@@ -287,15 +286,15 @@ function MisColaboradoresView({ onBack, onAbrirFormulario, colaboradores, onElim
                 </div>
                 {c.sueldo > 0 && (
                   <div className="flex items-center gap-1.5 mt-1.5">
-                    <span className="text-white/50 text-[10px] flex items-center gap-0.5">
+                    <span className="text-white/50 text-[10px] flex items-center gap-0.5 font-medium">
                       <Banknote size={9} />
-                      Bs. {c.sueldo.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      $ {c.sueldo.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
                     </span>
                     {bcvRateForCard && (
                       <>
                         <span className="text-white/20 text-[9px]">·</span>
-                        <span className="text-white/60 text-[10px] font-medium">
-                          $ {(c.sueldo / bcvRateForCard).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <span className="text-white/60 text-[10px]">
+                          ≈ Bs. {(c.sueldo * bcvRateForCard).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       </>
                     )}
@@ -329,10 +328,27 @@ function MisColaboradoresView({ onBack, onAbrirFormulario, colaboradores, onElim
 
 // ─── GENERAR PAGO ─────────────────────────────────────────────────────────────
 function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: number | null }) {
+  const [{ defaultDesde, defaultHasta }] = useState(() => {
+    const today = new Date();
+    const y = today.getFullYear();
+    const m = today.getMonth();
+    const d = today.getDate();
+    let dFrom, dTo;
+    if (d <= 15) {
+      dFrom = new Date(y, m - 1, 16);
+      dTo = new Date(y, m, 0);
+    } else {
+      dFrom = new Date(y, m, 1);
+      dTo = new Date(y, m, 15);
+    }
+    const format = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    return { defaultDesde: format(dFrom), defaultHasta: format(dTo) };
+  });
+
   const [colaboradores, setColaboradores] = useState<Colaborador[]>([]);
   const [selectedId, setSelectedId]       = useState('');
-  const [desde, setDesde]                 = useState('');
-  const [hasta, setHasta]                 = useState('');
+  const [desde, setDesde]                 = useState(defaultDesde);
+  const [hasta, setHasta]                 = useState(defaultHasta);
   const [bono, setBono]                   = useState('');
   const [generando, setGenerando]         = useState(false);
   const [error, setError]                 = useState('');
@@ -347,9 +363,10 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
   }, []);
 
   const colaborador = colaboradores.find(c => c.id === selectedId) ?? null;
-  const sueldoQuincenal = colaborador ? (colaborador.sueldo ?? 0) / 2 : 0;
+  const sueldoQuincenalUSD = colaborador ? (colaborador.sueldo ?? 0) / 2 : 0;
+  const sueldoQuincenalBs = sueldoQuincenalUSD * (bcvRate ?? 0);
   const bonoNum         = parseFloat(bono) || 0;
-  const totalPagar      = sueldoQuincenal + bonoNum;
+  const totalPagar      = sueldoQuincenalBs + bonoNum;
 
   const formatBs = (n: number) =>
     'Bs. ' + n.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -365,6 +382,7 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
     setError(''); setExitoEnvio(null);
     if (!colaborador)  { setError('Selecciona un colaborador');       return; }
     if (!desde || !hasta) { setError('Completa el período de pago'); return; }
+    if (!bcvRate) { setError('No se pudo obtener la tasa BCV. Necesaria para calcular el pago.'); return; }
     setGenerando(true);
 
     // Capturar snapshot antes del posible reset
@@ -455,7 +473,7 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
         y += 8;
       };
 
-      addConcepto('Sueldo Quincenal', formatBs(sueldoQuincenal));
+      addConcepto(`Sueldo Quincenal ($${sueldoQuincenalUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD)`, formatBs(sueldoQuincenalBs));
       addConcepto('Bono de asistencia y puntualidad', formatBs(bonoNum));
 
       // Línea total
@@ -519,8 +537,8 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
 
       // ── RESET CAMPOS ───────────────────────────────────────────────────
       setSelectedId('');
-      setDesde('');
-      setHasta('');
+      setDesde(defaultDesde);
+      setHasta(defaultHasta);
       setBono('');
 
       // ── GUARDAR PAGO EN SERVIDOR ────────────────────────────────────────
@@ -607,7 +625,7 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
           <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 flex flex-wrap gap-x-4 gap-y-1">
             <span className="text-white/40 text-[10px] flex items-center gap-0.5"><IdCard size={9} />{colaborador.cedula}</span>
             <span className="text-white/40 text-[10px] flex items-center gap-0.5">
-              <Banknote size={9} />Sueldo mensual: {formatBs(colaborador.sueldo ?? 0)}
+              <Banknote size={9} />Sueldo mensual: $ {colaborador.sueldo?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0.00'} USD
             </span>
             <span className="text-white/40 text-[10px] flex items-center gap-0.5">
               <Clock size={9} />{colaborador.tipo_turno === 'completo' ? 'Turno completo' : 'Medio turno'}
@@ -651,8 +669,8 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
           <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 flex flex-col gap-1.5">
             <p className="text-white/40 text-[9px] uppercase tracking-widest mb-1">Resumen del recibo</p>
             <div className="flex justify-between text-[10px]">
-              <span className="text-white/50">Sueldo quincenal</span>
-              <span className="text-white/80">{formatBs(sueldoQuincenal)}</span>
+              <span className="text-white/50">Sueldo quincenal ($ {sueldoQuincenalUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD)</span>
+              <span className="text-white/80">{formatBs(sueldoQuincenalBs)}</span>
             </div>
             <div className="flex justify-between text-[10px]">
               <span className="text-white/50">Bono asistencia y puntualidad</span>
