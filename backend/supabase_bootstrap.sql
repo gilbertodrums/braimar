@@ -22,8 +22,12 @@ CREATE TABLE pagos (
     hora_generado TIME NOT NULL
 );
 
--- Habilitar RLS (Row Level Security) opcional, por ahora lo dejamos publico para la conexion de prueba o lo deshabilitamos.
--- Para que el backend pueda leer y escribir libremente usando la "Service Role Key" no hace falta, 
--- pero como usaremos la 'anon key' y queremos que no falle, desactivaremos RLS momentaneamente:
+-- Tabla de configuracion persistente (PIN, WebAuthn)
+CREATE TABLE settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+
 ALTER TABLE colaboradores DISABLE ROW LEVEL SECURITY;
 ALTER TABLE pagos DISABLE ROW LEVEL SECURITY;
+ALTER TABLE settings DISABLE ROW LEVEL SECURITY;
