@@ -144,7 +144,15 @@ def get_pin_hash() -> bytes:
 def set_pin_hash(new_hash: bytes):
     PIN_FILE.write_text(json.dumps({"hash": new_hash.decode('utf-8')}))
 
-limiter = Limiter(key_func=get_remote_address)
+def get_real_ip(request: Request) -> str:
+    # Cloudflare passes the real client IP in CF-Connecting-IP
+    for header in ("CF-Connecting-IP", "X-Real-IP", "X-Forwarded-For"):
+        val = request.headers.get(header)
+        if val:
+            return val.split(",")[0].strip()
+    return request.client.host or "unknown"
+
+limiter = Limiter(key_func=get_real_ip)
 
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 
@@ -243,7 +251,7 @@ async def check_session(braimar_session: Optional[str] = Cookie(default=None)):
 
 
 @app.post("/login")
-@limiter.limit("5/15minute")
+@limiter.limit("10/minute")
 async def login(request: Request, response: Response, payload: PinRequest):
     try:
         is_valid = bcrypt.checkpw(payload.pin.encode('utf-8'), get_pin_hash())
@@ -693,7 +701,7 @@ def verify_session(token: Optional[str]) -> bool:
         return False
 
 @app.post("/change-pin")
-@limiter.limit("5/15minute")
+@limiter.limit("10/minute")
 async def change_pin(
     request: Request,
     payload: ChangePinRequest,
