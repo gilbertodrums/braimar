@@ -172,7 +172,8 @@ app.add_middleware(
         "http://localhost:5173", "http://127.0.0.1:5173",
         "http://localhost:5174", "http://127.0.0.1:5174",
         "http://frontend.localhost", "https://frontend.localhost",
-        "http://braimar-backend.localhost", "https://braimar-backend.localhost"
+        "http://braimar-backend.localhost", "https://braimar-backend.localhost",
+        os.getenv("FRONTEND_URL", "http://localhost:5173")
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE"],
@@ -248,7 +249,7 @@ async def login(request: Request, response: Response, payload: PinRequest):
         value=encoded_jwt,
         httponly=True,
         secure=(ENVIRONMENT == "production"),
-        samesite="strict",
+        samesite="none" if ENVIRONMENT == "production" else "strict",
         max_age=8 * 3600,
         expires=expire.strftime("%a, %d-%b-%Y %T GMT")
     )
@@ -608,7 +609,7 @@ async def wn_auth_complete(request: Request, response: Response):
     response.set_cookie(
         key="braimar_session", value=encoded_jwt,
         httponly=True, secure=(ENVIRONMENT == "production"),
-        samesite="strict", max_age=8 * 3600,
+        samesite="none" if ENVIRONMENT == "production" else "strict", max_age=8 * 3600,
         expires=expire.strftime("%a, %d-%b-%Y %T GMT"),
     )
     return {"status": "ok"}
@@ -709,3 +710,4 @@ async def change_pin(
     set_pin_hash(new_hash)
 
     return {"status": "ok"}
+
