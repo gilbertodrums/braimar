@@ -64,9 +64,9 @@ if not SUPABASE_URL or not SUPABASE_KEY:
     raise RuntimeError("Configuración de Supabase no encontrada en .env")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-PIN_FILE = Path(__file__).parent / "pin.json"
 BCV_CACHE_FILE = Path(__file__).parent / "bcv_cache.json"
-WEBAUTHN_FILE = Path(__file__).parent / "webauthn.json"
+
+DEFAULT_PIN = "052026"
 
 # Challenge temporal en memoria (sistema monousuario)
 _wn_challenge: dict = {}  # {"value": bytes, "expires": float}
@@ -133,16 +133,21 @@ async def _scrape_bcv_usd() -> dict:
     return {"valor": valor, "fecha_valor": fecha}
 
 def get_pin_hash() -> bytes:
-    if PIN_FILE.exists():
-        data = json.loads(PIN_FILE.read_text())
-        return data["hash"].encode('utf-8')
-    # Primera ejecucion: crear el archivo con el PIN por defecto (052026)
-    default_hash = bcrypt.hashpw(b"052026", bcrypt.gensalt(12))
-    PIN_FILE.write_text(json.dumps({"hash": default_hash.decode('utf-8')}))
+    try:
+        resp = supabase.table("settings").select("value").eq("key", "pin_hash").execute()
+        if resp.data:
+            return resp.data[0]["value"].encode("utf-8")
+    except Exception as e:
+        logging.error(f"Error reading pin_hash from Supabase: {e}")
+    default_hash = bcrypt.hashpw(DEFAULT_PIN.encode(), bcrypt.gensalt(12))
+    set_pin_hash(default_hash)
     return default_hash
 
 def set_pin_hash(new_hash: bytes):
-    PIN_FILE.write_text(json.dumps({"hash": new_hash.decode('utf-8')}))
+    try:
+        supabase.table("settings").upsert({"key": "pin_hash", "value": new_hash.decode("utf-8")}).execute()
+    except Exception as e:
+        logging.error(f"Error saving pin_hash to Supabase: {e}")
 
 def get_real_ip(request: Request) -> str:
     # Cloudflare passes the real client IP in CF-Connecting-IP
@@ -552,21 +557,30 @@ async def wn_register_complete(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Verificación fallida: {e}")
 
-    WEBAUTHN_FILE.write_text(json.dumps({
+    wn_data = json.dumps({
         "credential_id": bytes_to_base64url(verification.credential_id),
         "public_key":    bytes_to_base64url(verification.credential_public_key),
         "sign_count":    verification.sign_count,
-    }))
+    })
+    supabase.table("settings").upsert({"key": "webauthn_credential", "value": wn_data}).execute()
     _wn_challenge.clear()
     return {"status": "ok"}
 
 
+def _load_webauthn() -> dict | None:
+    try:
+        resp = supabase.table("settings").select("value").eq("key", "webauthn_credential").execute()
+        if resp.data:
+            return json.loads(resp.data[0]["value"])
+    except Exception as e:
+        logging.error(f"Error loading webauthn from Supabase: {e}")
+    return None
+
 @app.post("/webauthn/auth/begin")
 async def wn_auth_begin():
-    if not WEBAUTHN_FILE.exists():
+    cred_data = _load_webauthn()
+    if not cred_data:
         raise HTTPException(status_code=404, detail="Sin biometría registrada")
-
-    cred_data = json.loads(WEBAUTHN_FILE.read_text())
     rp_id     = os.getenv("RP_ID", "localhost")
 
     options = generate_authentication_options(
@@ -583,14 +597,13 @@ async def wn_auth_begin():
 
 @app.post("/webauthn/auth/complete")
 async def wn_auth_complete(request: Request, response: Response):
-    if not WEBAUTHN_FILE.exists():
+    cred_data = _load_webauthn()
+    if not cred_data:
         raise HTTPException(status_code=404, detail="Sin biometría registrada")
 
     challenge = _wn_challenge.get("value")
     if not challenge or time.time() > _wn_challenge.get("expires", 0):
         raise HTTPException(status_code=400, detail="Desafío expirado. Inténtalo de nuevo.")
-
-    cred_data  = json.loads(WEBAUTHN_FILE.read_text())
     rp_id      = os.getenv("RP_ID", "localhost")
     rp_origin  = os.getenv("RP_ORIGIN", "http://localhost:5173")
     body = await request.json()
@@ -624,7 +637,7 @@ async def wn_auth_complete(request: Request, response: Response):
 
     # Actualizar sign count
     cred_data["sign_count"] = verification.new_sign_count
-    WEBAUTHN_FILE.write_text(json.dumps(cred_data))
+    supabase.table("settings").upsert({"key": "webauthn_credential", "value": json.dumps(cred_data)}).execute()
     _wn_challenge.clear()
 
     # Crear sesión JWT
@@ -643,8 +656,10 @@ async def wn_auth_complete(request: Request, response: Response):
 async def wn_delete(braimar_session: Optional[str] = Cookie(default=None)):
     if not verify_session(braimar_session):
         raise HTTPException(status_code=401, detail="Sesión inválida o expirada")
-    if WEBAUTHN_FILE.exists():
-        WEBAUTHN_FILE.unlink()
+    try:
+        supabase.table("settings").delete().eq("key", "webauthn_credential").execute()
+    except Exception as e:
+        logging.error(f"Error deleting webauthn from Supabase: {e}")
 
 
 @app.post("/enviar-recibo")
