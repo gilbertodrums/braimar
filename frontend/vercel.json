@@ -1,0 +1,14 @@
+{
+  "rewrites": [
+    { "source": "/login",              "destination": "https://braimar.onrender.com/login" },
+    { "source": "/me",                 "destination": "https://braimar.onrender.com/me" },
+    { "source": "/change-pin",         "destination": "https://braimar.onrender.com/change-pin" },
+    { "source": "/bcv-rate",           "destination": "https://braimar.onrender.com/bcv-rate" },
+    { "source": "/finanzas",           "destination": "https://braimar.onrender.com/finanzas" },
+    { "source": "/enviar-recibo",      "destination": "https://braimar.onrender.com/enviar-recibo" },
+    { "source": "/colaboradores/:path*","destination": "https://braimar.onrender.com/colaboradores/:path*" },
+    { "source": "/pagos/:path*",       "destination": "https://braimar.onrender.com/pagos/:path*" },
+    { "source": "/webauthn/:path*",    "destination": "https://braimar.onrender.com/webauthn/:path*" },
+    { "source": "/(.*)",               "destination": "/index.html" }
+  ]
+}
