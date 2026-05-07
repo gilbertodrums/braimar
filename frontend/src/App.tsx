@@ -743,7 +743,7 @@ function PagosRealizadosView({ onBack }: { onBack: () => void }) {
   useEffect(() => {
     if (!selectedId) { setPagos([]); return; }
     setCargando(true);
-    fetch(`/pagos?colaborador_id=${selectedId}`, { credentials: 'include' })
+    fetch((import.meta.env.VITE_API_URL || '') + `/pagos?colaborador_id=${selectedId}`, { credentials: 'include' })
       .then(r => r.ok ? r.json() : [])
       .then(setPagos)
       .catch(() => setPagos([]))
@@ -760,7 +760,7 @@ function PagosRealizadosView({ onBack }: { onBack: () => void }) {
   const verPDF = async (pago: Pago) => {
     setAbriendo(pago.id);
     try {
-      const r = await fetch(`/pagos/${pago.id}/pdf`, { credentials: 'include' });
+      const r = await fetch((import.meta.env.VITE_API_URL || '') + `/pagos/${pago.id}/pdf`, { credentials: 'include' });
       if (!r.ok) return;
       const blob = await r.blob();
       const url = URL.createObjectURL(blob);
@@ -994,7 +994,7 @@ function AdminPanel({ onLogout, bcvRate, biometriaHabilitada, onDesactivarBiomet
 
   const handleGuardarColaborador = async (data: Omit<Colaborador, 'id'>) => {
     if (editando) {
-      const r = await fetch(`/colaboradores/${editando.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(data) });
+      const r = await fetch((import.meta.env.VITE_API_URL || '') + `/colaboradores/${editando.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(data) });
       if (!r.ok) throw new Error();
       const updated = await r.json();
       setColaboradores(cs => cs.map(c => c.id === editando.id ? updated : c));
@@ -1009,7 +1009,7 @@ function AdminPanel({ onLogout, bcvRate, biometriaHabilitada, onDesactivarBiomet
   };
 
   const handleEliminar = async (id: string) => {
-    await fetch(`/colaboradores/${id}`, { method: 'DELETE', credentials: 'include' });
+    await fetch((import.meta.env.VITE_API_URL || '') + `/colaboradores/${id}`, { method: 'DELETE', credentials: 'include' });
     setColaboradores(cs => cs.filter(c => c.id !== id));
   };
 
@@ -1372,7 +1372,7 @@ export default function App() {
 
   const validatePasscode = async (code: string) => {
     try {
-      const r = await fetch((import.meta.env.VITE_API_URL || '') + '/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: code }) });
+      const r = await fetch((import.meta.env.VITE_API_URL || '') + '/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ pin: code }) });
       if (r.ok) {
         setIsAuthenticated(true); setPasscode('');
         // Ofrecer biometría si está disponible y no está registrada aún
