@@ -203,7 +203,7 @@ function FormInput({ label, value, onChange, placeholder, inputMode, icon, input
   label: string; value: string; onChange: (v: string) => void;
   placeholder?: string; inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode'];
   icon?: React.ReactNode;
-  inputRef?: React.RefObject<HTMLInputElement>;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
   onEnter?: () => void;
   isLast?: boolean;
 }) {
@@ -396,7 +396,7 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
       const W      = doc.internal.pageSize.getWidth();   // 210
       const margin = 18;
       const col1   = margin;
-      const col2   = 110;
+      // const col2   = 110;
 
       // ── CABECERA AZUL ──────────────────────────────────────────────────
       doc.setFillColor(0, 97, 255);
@@ -1172,16 +1172,16 @@ function SectionCard({ icon, titulo, items }: {
   );
 }
 
-function Placeholder({ texto }: { texto: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center mt-10 gap-2 text-center px-4">
-      <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
-        <Clock size={18} className="text-white/30" />
-      </div>
-      <p className="text-white/40 text-[11px]">{texto}</p>
-    </div>
-  );
-}
+// function Placeholder({ texto }: { texto: string }) {
+//   return (
+//     <div className="flex flex-col items-center justify-center mt-10 gap-2 text-center px-4">
+//       <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
+//         <Clock size={18} className="text-white/30" />
+//       </div>
+//       <p className="text-white/40 text-[11px]">{texto}</p>
+//     </div>
+//   );
+// }
 
 const PinInput = ({ label, value, onChange, disabled }: {
   label: string; value: string; onChange: (v: string) => void; disabled: boolean;
