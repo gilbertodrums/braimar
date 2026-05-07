@@ -136,8 +136,8 @@ def get_pin_hash() -> bytes:
     if PIN_FILE.exists():
         data = json.loads(PIN_FILE.read_text())
         return data["hash"].encode('utf-8')
-    # Primera ejecucion: crear el archivo con el PIN por defecto (123456)
-    default_hash = bcrypt.hashpw(b"123456", bcrypt.gensalt(12))
+    # Primera ejecucion: crear el archivo con el PIN por defecto (052026)
+    default_hash = bcrypt.hashpw(b"052026", bcrypt.gensalt(12))
     PIN_FILE.write_text(json.dumps({"hash": default_hash.decode('utf-8')}))
     return default_hash
 
