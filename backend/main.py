@@ -166,15 +166,23 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     logging.error("Validation error on %s: %s", request.url, exc.errors())
     return JSONResponse(status_code=422, content={"detail": exc.errors()})
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
+def _allowed_origins() -> list[str]:
+    base = [
         "http://localhost:5173", "http://127.0.0.1:5173",
         "http://localhost:5174", "http://127.0.0.1:5174",
         "http://frontend.localhost", "https://frontend.localhost",
         "http://braimar-backend.localhost", "https://braimar-backend.localhost",
-        os.getenv("FRONTEND_URL", "http://localhost:5173")
-    ],
+    ]
+    raw = os.getenv("FRONTEND_URL", "")
+    for url in raw.split(","):
+        url = url.strip()
+        if url:
+            base.append(url)
+    return base
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_allowed_origins(),
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
