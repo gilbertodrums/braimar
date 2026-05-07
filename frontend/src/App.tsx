@@ -1212,6 +1212,7 @@ export default function App() {
   const [passcode, setPasscode]               = useState('');
   const [isError, setIsError]                 = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const [bcvRateNum, setBcvRateNum]           = useState<number | null>(null);
   const [bcvDisplay, setBcvDisplay]           = useState<string | null>(null);
 
@@ -1225,6 +1226,16 @@ export default function App() {
 
   const MAX_LENGTH = 6;
   const webauthnSoportado = typeof window !== 'undefined' && !!window.PublicKeyCredential;
+
+  // ── VERIFICAR SESIÓN ACTIVA AL RECARGAR ──
+  useEffect(() => {
+    fetch((import.meta.env.VITE_API_URL || '') + '/me', { credentials: 'include' })
+      .then(r => {
+        if (r.ok) setIsAuthenticated(true);
+      })
+      .catch(() => {})
+      .finally(() => setCheckingSession(false));
+  }, []);
 
   useEffect(() => {
     fetch((import.meta.env.VITE_API_URL || '') + '/bcv-rate').then(r => r.ok ? r.json() : null).then(data => {
@@ -1377,6 +1388,17 @@ export default function App() {
   ];
 
   // ── PANEL (scroll natural del navegador) ──
+  if (checkingSession) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center bg-[#1a0533]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
+          <p className="text-white/40 text-xs tracking-widest uppercase">Verificando sesión...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (isAuthenticated) {
     return (
       <div className="min-h-[100dvh] font-sans select-none">

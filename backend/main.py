@@ -153,7 +153,7 @@ async def add_security_headers(request: Request, call_next):
     response = await call_next(request)
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["Content-Security-Policy"] = "default-src 'self'"
+    response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://braimar.onrender.com wss:; img-src 'self' data:"
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response
@@ -226,6 +226,14 @@ def _read_pagos_index() -> list:
         logging.error(f"Error reading pagos from Supabase: {e}")
         return []
 
+@app.get("/me")
+async def check_session(braimar_session: Optional[str] = Cookie(default=None)):
+    """Verifica si la sesión actual sigue siendo válida. Usado por el frontend al recargar."""
+    if verify_session(braimar_session):
+        return {"authenticated": True}
+    raise HTTPException(status_code=401, detail="Sesión inválida o expirada")
+
+
 @app.post("/login")
 @limiter.limit("5/15minute")
 async def login(request: Request, response: Response, payload: PinRequest):
@@ -240,7 +248,7 @@ async def login(request: Request, response: Response, payload: PinRequest):
             detail="Unauthorized"
         )
 
-    expire = datetime.datetime.utcnow() + datetime.timedelta(hours=8)
+    expire = datetime.datetime.utcnow() + datetime.timedelta(hours=12)
     token_data = {"sub": "braimar_admin", "exp": expire}
     encoded_jwt = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -249,8 +257,8 @@ async def login(request: Request, response: Response, payload: PinRequest):
         value=encoded_jwt,
         httponly=True,
         secure=(ENVIRONMENT == "production"),
-        samesite="none" if ENVIRONMENT == "production" else "strict",
-        max_age=8 * 3600,
+        samesite="none" if ENVIRONMENT == "production" else "lax",
+        max_age=12 * 3600,
         expires=expire.strftime("%a, %d-%b-%Y %T GMT")
     )
 
@@ -604,12 +612,12 @@ async def wn_auth_complete(request: Request, response: Response):
     _wn_challenge.clear()
 
     # Crear sesión JWT
-    expire      = datetime.datetime.utcnow() + datetime.timedelta(hours=8)
+    expire      = datetime.datetime.utcnow() + datetime.timedelta(hours=12)
     encoded_jwt = jwt.encode({"sub": "braimar_admin", "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
     response.set_cookie(
         key="braimar_session", value=encoded_jwt,
         httponly=True, secure=(ENVIRONMENT == "production"),
-        samesite="none" if ENVIRONMENT == "production" else "strict", max_age=8 * 3600,
+        samesite="none" if ENVIRONMENT == "production" else "lax", max_age=12 * 3600,
         expires=expire.strftime("%a, %d-%b-%Y %T GMT"),
     )
     return {"status": "ok"}
