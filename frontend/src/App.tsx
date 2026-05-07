@@ -356,7 +356,7 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
   const [exitoEnvio, setExitoEnvio]       = useState<'ok' | 'error' | null>(null);
 
   useEffect(() => {
-    fetch(import.meta.env.VITE_API_URL + '/colaboradores', { credentials: 'include' })
+    fetch((import.meta.env.VITE_API_URL || '') + '/colaboradores', { credentials: 'include' })
       .then(r => r.ok ? r.json() : [])
       .then(setColaboradores)
       .catch(() => {});
@@ -542,7 +542,7 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
       setBono('');
 
       // ── GUARDAR PAGO EN SERVIDOR ────────────────────────────────────────
-      fetch(import.meta.env.VITE_API_URL + '/pagos', {
+      fetch((import.meta.env.VITE_API_URL || '') + '/pagos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -559,7 +559,7 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
       if (colSnap.correo) {
         setEnviando(true);
         try {
-          const r = await fetch(import.meta.env.VITE_API_URL + '/enviar-recibo', {
+          const r = await fetch((import.meta.env.VITE_API_URL || '') + '/enviar-recibo', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -734,7 +734,7 @@ function PagosRealizadosView({ onBack }: { onBack: () => void }) {
   const [abriendo, setAbriendo]           = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(import.meta.env.VITE_API_URL + '/colaboradores', { credentials: 'include' })
+    fetch((import.meta.env.VITE_API_URL || '') + '/colaboradores', { credentials: 'include' })
       .then(r => r.ok ? r.json() : [])
       .then(setColaboradores)
       .catch(() => {});
@@ -845,7 +845,7 @@ function ControlFinanzasView({ onBack, bcvRate }: { onBack: () => void; bcvRate:
 
   const cargarFinanzas = () => {
     setCargando(true);
-    fetch(import.meta.env.VITE_API_URL + '/finanzas', { credentials: 'include', cache: 'no-store' })
+    fetch((import.meta.env.VITE_API_URL || '') + '/finanzas', { credentials: 'include', cache: 'no-store' })
       .then(r => r.ok ? r.json() : [])
       .then(setPeriodos)
       .catch(() => {})
@@ -988,7 +988,7 @@ function AdminPanel({ onLogout, bcvRate, biometriaHabilitada, onDesactivarBiomet
 
   const fetchColaboradores = async () => {
     setCargandoColab(true);
-    try { const r = await fetch(import.meta.env.VITE_API_URL + '/colaboradores', { credentials: 'include' }); if (r.ok) setColaboradores(await r.json()); }
+    try { const r = await fetch((import.meta.env.VITE_API_URL || '') + '/colaboradores', { credentials: 'include' }); if (r.ok) setColaboradores(await r.json()); }
     finally { setCargandoColab(false); }
   };
 
@@ -999,7 +999,7 @@ function AdminPanel({ onLogout, bcvRate, biometriaHabilitada, onDesactivarBiomet
       const updated = await r.json();
       setColaboradores(cs => cs.map(c => c.id === editando.id ? updated : c));
     } else {
-      const r = await fetch(import.meta.env.VITE_API_URL + '/colaboradores', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(data) });
+      const r = await fetch((import.meta.env.VITE_API_URL || '') + '/colaboradores', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(data) });
       if (!r.ok) throw new Error();
       const nuevo = await r.json();
       setColaboradores(cs => [...cs, nuevo]);
@@ -1021,7 +1021,7 @@ function AdminPanel({ onLogout, bcvRate, biometriaHabilitada, onDesactivarBiomet
     if (newPin.length !== 6 || !/^\d+$/.test(newPin)) { setErrorMsg('El nuevo PIN debe tener 6 dígitos'); return; }
     setSubmitState('loading');
     try {
-      const res = await fetch(import.meta.env.VITE_API_URL + '/change-pin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ current_pin: currentPin, new_pin: newPin }) });
+      const res = await fetch((import.meta.env.VITE_API_URL || '') + '/change-pin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ current_pin: currentPin, new_pin: newPin }) });
       if (res.ok) {
         setSubmitState('success');
         setTimeout(() => { setSubmitState('idle'); setView('menu'); setCurrentPin(''); setNewPin(''); setConfirmPin(''); }, 2000);
@@ -1227,7 +1227,7 @@ export default function App() {
   const webauthnSoportado = typeof window !== 'undefined' && !!window.PublicKeyCredential;
 
   useEffect(() => {
-    fetch(import.meta.env.VITE_API_URL + '/bcv-rate').then(r => r.ok ? r.json() : null).then(data => {
+    fetch((import.meta.env.VITE_API_URL || '') + '/bcv-rate').then(r => r.ok ? r.json() : null).then(data => {
       if (data?.valor) {
         const n = parseFloat(data.valor);
         if (!isNaN(n)) { setBcvRateNum(n); setBcvDisplay(n.toFixed(2).replace('.', ',')); }
@@ -1256,7 +1256,7 @@ export default function App() {
   const registrarBiometria = async () => {
     setBiometriaCargando(true); setBiometriaError('');
     try {
-      const optsRes = await fetch(import.meta.env.VITE_API_URL + '/webauthn/register/begin', { method: 'POST', credentials: 'include' });
+      const optsRes = await fetch((import.meta.env.VITE_API_URL || '') + '/webauthn/register/begin', { method: 'POST', credentials: 'include' });
       if (!optsRes.ok) throw new Error('Error al iniciar registro');
       const opts = await optsRes.json();
 
@@ -1270,7 +1270,7 @@ export default function App() {
       }) as PublicKeyCredential;
       const resp = cred.response as AuthenticatorAttestationResponse;
 
-      const verRes = await fetch(import.meta.env.VITE_API_URL + '/webauthn/register/complete', {
+      const verRes = await fetch((import.meta.env.VITE_API_URL || '') + '/webauthn/register/complete', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({
           id: cred.id, rawId: toB64(cred.rawId), type: cred.type,
@@ -1297,7 +1297,7 @@ export default function App() {
   const loginBiometria = async () => {
     setBiometriaCargando(true); setBiometriaError('');
     try {
-      const optsRes = await fetch(import.meta.env.VITE_API_URL + '/webauthn/auth/begin', { method: 'POST' });
+      const optsRes = await fetch((import.meta.env.VITE_API_URL || '') + '/webauthn/auth/begin', { method: 'POST' });
       if (!optsRes.ok) {
         // Credencial eliminada en servidor — limpiar localStorage
         localStorage.removeItem('biometria_habilitada');
@@ -1315,7 +1315,7 @@ export default function App() {
       }) as PublicKeyCredential;
       const resp = cred.response as AuthenticatorAssertionResponse;
 
-      const verRes = await fetch(import.meta.env.VITE_API_URL + '/webauthn/auth/complete', {
+      const verRes = await fetch((import.meta.env.VITE_API_URL || '') + '/webauthn/auth/complete', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({
           id: cred.id, rawId: toB64(cred.rawId), type: cred.type,
@@ -1340,7 +1340,7 @@ export default function App() {
   };
 
   const desactivarBiometria = async () => {
-    await fetch(import.meta.env.VITE_API_URL + '/webauthn', { method: 'DELETE', credentials: 'include' }).catch(() => {});
+    await fetch((import.meta.env.VITE_API_URL || '') + '/webauthn', { method: 'DELETE', credentials: 'include' }).catch(() => {});
     localStorage.removeItem('biometria_habilitada');
     setBiometriaHabilitada(false);
   };
@@ -1361,7 +1361,7 @@ export default function App() {
 
   const validatePasscode = async (code: string) => {
     try {
-      const r = await fetch(import.meta.env.VITE_API_URL + '/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: code }) });
+      const r = await fetch((import.meta.env.VITE_API_URL || '') + '/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: code }) });
       if (r.ok) {
         setIsAuthenticated(true); setPasscode('');
         // Ofrecer biometría si está disponible y no está registrada aún
