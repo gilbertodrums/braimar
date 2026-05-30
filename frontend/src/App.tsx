@@ -944,6 +944,7 @@ function PagosRealizadosView({ onBack }: { onBack: () => void }) {
   const [pagos, setPagos]                 = useState<Pago[]>([]);
   const [cargando, setCargando]           = useState(false);
   const [abriendo, setAbriendo]           = useState<string | null>(null);
+  const [eliminando, setEliminando]       = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/colaboradores', { credentials: 'include' })
@@ -979,6 +980,26 @@ function PagosRealizadosView({ onBack }: { onBack: () => void }) {
       window.open(url, '_blank');
     } finally {
       setAbriendo(null);
+    }
+  };
+
+  const handleEliminarPago = async (pagoId: string) => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este registro de pago? Esta acción no se puede deshacer y borrará también el PDF almacenado en la nube.')) return;
+    setEliminando(pagoId);
+    try {
+      const res = await fetch(`/pagos/${pagoId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (res.ok) {
+        setPagos(prev => prev.filter(p => p.id !== pagoId));
+      } else {
+        alert('Error al eliminar el registro de pago. Intenta nuevamente.');
+      }
+    } catch {
+      alert('Error de conexión al intentar eliminar el registro de pago.');
+    } finally {
+      setEliminando(null);
     }
   };
 
@@ -1034,13 +1055,23 @@ function PagosRealizadosView({ onBack }: { onBack: () => void }) {
                   <Calendar size={9} /> {formatFecha(p.fecha_generado)} · {p.hora_generado}
                 </span>
               </div>
-              <button
-                onClick={() => verPDF(p)}
-                disabled={abriendo === p.id}
-                className="shrink-0 flex items-center gap-1.5 bg-white/15 hover:bg-white/25 border border-white/20 text-white text-[10px] font-medium px-3 py-1.5 rounded-lg transition-all disabled:opacity-40 active:scale-95">
-                <FileDown size={11} />
-                {abriendo === p.id ? '…' : 'Ver PDF'}
-              </button>
+              <div className="shrink-0 flex items-center gap-2">
+                <button
+                  onClick={() => verPDF(p)}
+                  disabled={abriendo === p.id || eliminando === p.id}
+                  className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 border border-white/20 text-white text-[10px] font-medium px-3 py-1.5 rounded-lg transition-all disabled:opacity-40 active:scale-95">
+                  <FileDown size={11} />
+                  {abriendo === p.id ? '…' : 'Ver PDF'}
+                </button>
+                <button
+                  onClick={() => handleEliminarPago(p.id)}
+                  disabled={eliminando === p.id}
+                  className="flex items-center justify-center bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 text-red-300 w-8 h-8 rounded-lg transition-all disabled:opacity-40 active:scale-95 animate-fade-in"
+                  title="Eliminar registro de pago"
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
             </div>
           </div>
         ))}

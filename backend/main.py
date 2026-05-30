@@ -519,6 +519,29 @@ async def obtener_pdf(
     except Exception as e:
         raise HTTPException(status_code=404, detail="PDF no encontrado o error en Supabase")
 
+@app.delete("/pagos/{pago_id}", status_code=204)
+async def delete_pago(
+    pago_id: str,
+    braimar_session: Optional[str] = Cookie(default=None)
+):
+    if not verify_session(braimar_session):
+        raise HTTPException(status_code=401, detail="Sesión inválida o expirada")
+    
+    # 1. Borrar PDF del almacenamiento
+    try:
+        supabase.storage.from_("pagos").remove([f"{pago_id}.pdf"])
+    except Exception as e:
+        logging.error(f"Error borrando PDF del pago {pago_id} de Supabase Storage: {e}")
+
+    # 2. Borrar registro de la base de datos
+    try:
+        response = supabase.table("pagos").delete().eq("id", pago_id).execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Pago no encontrado")
+    except Exception as e:
+        logging.error(f"Error borrando pago {pago_id} de Supabase: {e}")
+        raise HTTPException(status_code=500, detail=f"Error al borrar el pago: {e}")
+
 @app.get("/finanzas")
 async def get_finanzas(braimar_session: Optional[str] = Cookie(default=None)):
     if not verify_session(braimar_session):
