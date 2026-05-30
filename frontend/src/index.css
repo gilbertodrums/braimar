@@ -10,6 +10,24 @@ html, body {
   background-attachment: fixed;
 }
 
+body::before {
+  content: "";
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(85vw, 480px);
+  height: min(85vw, 480px);
+  background-image: url('/logo-bg.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.035; /* Faded watermark */
+  filter: blur(1px); /* Subtly blurred */
+  pointer-events: none; /* Do not capture clicks */
+  z-index: -1;
+}
+
 @layer utilities {
   @keyframes shake {
     0%, 100% { transform: translateX(0); }
