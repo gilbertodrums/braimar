@@ -16,6 +16,8 @@ export default defineConfig({
     // },
     proxy: {
       '/login':        'http://localhost:8081',
+      '/me':           'http://localhost:8081',
+      '/health':       'http://localhost:8081',
       '/change-pin':   'http://localhost:8081',
       '/bcv-rate':     'http://localhost:8081',
       '/colaboradores':'http://localhost:8081',

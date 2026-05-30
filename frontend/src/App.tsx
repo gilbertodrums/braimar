@@ -494,7 +494,7 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
   const [horasExtras, setHorasExtras]     = useState<HoraExtra[]>([]);
 
   useEffect(() => {
-    fetch((import.meta.env.VITE_API_URL || '') + '/colaboradores', { credentials: 'include' })
+    fetch('/colaboradores', { credentials: 'include' })
       .then(r => r.ok ? r.json() : [])
       .then(setColaboradores)
       .catch(() => {});
@@ -502,7 +502,7 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
 
   useEffect(() => {
     if (selectedId) {
-      fetch((import.meta.env.VITE_API_URL || '') + '/horas-extras', { credentials: 'include' })
+      fetch('/horas-extras', { credentials: 'include' })
         .then(r => r.ok ? r.json() : [])
         .then(setHorasExtras)
         .catch(() => {});
@@ -731,7 +731,7 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
       setBono('');
 
       // ── GUARDAR PAGO EN SERVIDOR ────────────────────────────────────────
-      fetch((import.meta.env.VITE_API_URL || '') + '/pagos', {
+      fetch('/pagos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -748,7 +748,7 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
       if (colSnap.correo) {
         setEnviando(true);
         try {
-          const r = await fetch((import.meta.env.VITE_API_URL || '') + '/enviar-recibo', {
+          const r = await fetch('/enviar-recibo', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -945,7 +945,7 @@ function PagosRealizadosView({ onBack }: { onBack: () => void }) {
   const [abriendo, setAbriendo]           = useState<string | null>(null);
 
   useEffect(() => {
-    fetch((import.meta.env.VITE_API_URL || '') + '/colaboradores', { credentials: 'include' })
+    fetch('/colaboradores', { credentials: 'include' })
       .then(r => r.ok ? r.json() : [])
       .then(setColaboradores)
       .catch(() => {});
@@ -954,7 +954,7 @@ function PagosRealizadosView({ onBack }: { onBack: () => void }) {
   useEffect(() => {
     if (!selectedId) { setPagos([]); return; }
     setCargando(true);
-    fetch((import.meta.env.VITE_API_URL || '') + `/pagos?colaborador_id=${selectedId}`, { credentials: 'include' })
+    fetch(`/pagos?colaborador_id=${selectedId}`, { credentials: 'include' })
       .then(r => r.ok ? r.json() : [])
       .then(setPagos)
       .catch(() => setPagos([]))
@@ -971,7 +971,7 @@ function PagosRealizadosView({ onBack }: { onBack: () => void }) {
   const verPDF = async (pago: Pago) => {
     setAbriendo(pago.id);
     try {
-      const r = await fetch((import.meta.env.VITE_API_URL || '') + `/pagos/${pago.id}/pdf`, { credentials: 'include' });
+      const r = await fetch(`/pagos/${pago.id}/pdf`, { credentials: 'include' });
       if (!r.ok) return;
       const blob = await r.blob();
       const url = URL.createObjectURL(blob);
@@ -1056,7 +1056,7 @@ function ControlFinanzasView({ onBack, bcvRate }: { onBack: () => void; bcvRate:
 
   const cargarFinanzas = () => {
     setCargando(true);
-    fetch((import.meta.env.VITE_API_URL || '') + '/finanzas', { credentials: 'include', cache: 'no-store' })
+    fetch('/finanzas', { credentials: 'include', cache: 'no-store' })
       .then(r => r.ok ? r.json() : [])
       .then(setPeriodos)
       .catch(() => {})
@@ -1216,7 +1216,7 @@ function HorasExtrasView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
   const cargarDatos = useCallback(async () => {
     setCargando(true);
     try {
-      const colabRes = await fetch((import.meta.env.VITE_API_URL || '') + '/colaboradores', { credentials: 'include' });
+      const colabRes = await fetch('/colaboradores', { credentials: 'include' });
       if (colabRes.ok) {
         const colabData = await colabRes.json();
         setColaboradores(colabData);
@@ -1225,7 +1225,7 @@ function HorasExtrasView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
           setSummaryColabId(colabData[0].id);
         }
       }
-      const extrasRes = await fetch((import.meta.env.VITE_API_URL || '') + '/horas-extras', { credentials: 'include' });
+      const extrasRes = await fetch('/horas-extras', { credentials: 'include' });
       if (extrasRes.ok) {
         setHorasExtras(await extrasRes.json());
       }
@@ -1380,14 +1380,14 @@ function HorasExtrasView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
     try {
       let res;
       if (editEntry) {
-        res = await fetch((import.meta.env.VITE_API_URL || '') + `/horas-extras/${editEntry.id}`, {
+        res = await fetch(`/horas-extras/${editEntry.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify(payload)
         });
       } else {
-        res = await fetch((import.meta.env.VITE_API_URL || '') + '/horas-extras', {
+        res = await fetch('/horas-extras', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -1415,7 +1415,7 @@ function HorasExtrasView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
 
   const handleEliminar = async (id: string) => {
     try {
-      const res = await fetch((import.meta.env.VITE_API_URL || '') + `/horas-extras/${id}`, {
+      const res = await fetch(`/horas-extras/${id}`, {
         method: 'DELETE',
         credentials: 'include'
       });
@@ -1766,18 +1766,18 @@ function AdminPanel({ onLogout, bcvRate, biometriaHabilitada, onDesactivarBiomet
 
   const fetchColaboradores = async () => {
     setCargandoColab(true);
-    try { const r = await fetch((import.meta.env.VITE_API_URL || '') + '/colaboradores', { credentials: 'include' }); if (r.ok) setColaboradores(await r.json()); }
+    try { const r = await fetch('/colaboradores', { credentials: 'include' }); if (r.ok) setColaboradores(await r.json()); }
     finally { setCargandoColab(false); }
   };
 
   const handleGuardarColaborador = async (data: Omit<Colaborador, 'id'>) => {
     if (editando) {
-      const r = await fetch((import.meta.env.VITE_API_URL || '') + `/colaboradores/${editando.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(data) });
+      const r = await fetch(`/colaboradores/${editando.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(data) });
       if (!r.ok) throw new Error();
       const updated = await r.json();
       setColaboradores(cs => cs.map(c => c.id === editando.id ? updated : c));
     } else {
-      const r = await fetch((import.meta.env.VITE_API_URL || '') + '/colaboradores', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(data) });
+      const r = await fetch('/colaboradores', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(data) });
       if (!r.ok) throw new Error();
       const nuevo = await r.json();
       setColaboradores(cs => [...cs, nuevo]);
@@ -1788,7 +1788,7 @@ function AdminPanel({ onLogout, bcvRate, biometriaHabilitada, onDesactivarBiomet
 
   const handleEliminar = async (id: string) => {
     try {
-      const res = await fetch((import.meta.env.VITE_API_URL || '') + `/colaboradores/${id}`, { 
+      const res = await fetch(`/colaboradores/${id}`, { 
         method: 'DELETE', 
         credentials: 'include' 
       });
@@ -1811,7 +1811,7 @@ function AdminPanel({ onLogout, bcvRate, biometriaHabilitada, onDesactivarBiomet
     if (newPin.length !== 6 || !/^\d+$/.test(newPin)) { setErrorMsg('El nuevo PIN debe tener 6 dígitos'); return; }
     setSubmitState('loading');
     try {
-      const res = await fetch((import.meta.env.VITE_API_URL || '') + '/change-pin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ current_pin: currentPin, new_pin: newPin }) });
+      const res = await fetch('/change-pin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ current_pin: currentPin, new_pin: newPin }) });
       if (res.ok) {
         setSubmitState('success');
         setTimeout(() => { setSubmitState('idle'); setView('menu'); setCurrentPin(''); setNewPin(''); setConfirmPin(''); }, 2000);
@@ -2029,14 +2029,14 @@ export default function App() {
     // Luego verificamos la sesión con reintentos para tolerar el tiempo de arranque
     const checkSession = async () => {
       // Intentar despertar el backend (sin bloquear)
-      fetch((import.meta.env.VITE_API_URL || '') + '/health').catch(() => {});
+      fetch('/health').catch(() => {});
       
       // Intentar verificar sesión hasta 3 veces (en caso de cold start de Render)
       let attempts = 0;
       const maxAttempts = 3;
       while (attempts < maxAttempts) {
         try {
-          const r = await fetch((import.meta.env.VITE_API_URL || '') + '/me', { credentials: 'include' });
+          const r = await fetch('/me', { credentials: 'include' });
           if (r.ok) { setIsAuthenticated(true); break; }
           if (r.status === 401) break; // Sesión inválida, no reintentar
           // Otro error (503, timeout), esperar y reintentar
@@ -2053,7 +2053,7 @@ export default function App() {
 
 
   useEffect(() => {
-    fetch((import.meta.env.VITE_API_URL || '') + '/bcv-rate').then(r => r.ok ? r.json() : null).then(data => {
+    fetch('/bcv-rate').then(r => r.ok ? r.json() : null).then(data => {
       if (data?.valor) {
         const n = parseFloat(data.valor);
         if (!isNaN(n)) { setBcvRateNum(n); setBcvDisplay(n.toFixed(2).replace('.', ',')); }
@@ -2082,7 +2082,7 @@ export default function App() {
   const registrarBiometria = async () => {
     setBiometriaCargando(true); setBiometriaError('');
     try {
-      const optsRes = await fetch((import.meta.env.VITE_API_URL || '') + '/webauthn/register/begin', { method: 'POST', credentials: 'include' });
+      const optsRes = await fetch('/webauthn/register/begin', { method: 'POST', credentials: 'include' });
       if (!optsRes.ok) throw new Error('Error al iniciar registro');
       const opts = await optsRes.json();
 
@@ -2096,7 +2096,7 @@ export default function App() {
       }) as PublicKeyCredential;
       const resp = cred.response as AuthenticatorAttestationResponse;
 
-      const verRes = await fetch((import.meta.env.VITE_API_URL || '') + '/webauthn/register/complete', {
+      const verRes = await fetch('/webauthn/register/complete', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({
           id: cred.id, rawId: toB64(cred.rawId), type: cred.type,
@@ -2123,7 +2123,7 @@ export default function App() {
   const loginBiometria = async () => {
     setBiometriaCargando(true); setBiometriaError('');
     try {
-      const optsRes = await fetch((import.meta.env.VITE_API_URL || '') + '/webauthn/auth/begin', { method: 'POST' });
+      const optsRes = await fetch('/webauthn/auth/begin', { method: 'POST' });
       if (!optsRes.ok) {
         // Credencial eliminada en servidor — limpiar localStorage
         localStorage.removeItem('biometria_habilitada');
@@ -2141,7 +2141,7 @@ export default function App() {
       }) as PublicKeyCredential;
       const resp = cred.response as AuthenticatorAssertionResponse;
 
-      const verRes = await fetch((import.meta.env.VITE_API_URL || '') + '/webauthn/auth/complete', {
+      const verRes = await fetch('/webauthn/auth/complete', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({
           id: cred.id, rawId: toB64(cred.rawId), type: cred.type,
@@ -2166,7 +2166,7 @@ export default function App() {
   };
 
   const desactivarBiometria = async () => {
-    await fetch((import.meta.env.VITE_API_URL || '') + '/webauthn', { method: 'DELETE', credentials: 'include' }).catch(() => {});
+    await fetch('/webauthn', { method: 'DELETE', credentials: 'include' }).catch(() => {});
     localStorage.removeItem('biometria_habilitada');
     setBiometriaHabilitada(false);
   };
@@ -2187,7 +2187,7 @@ export default function App() {
 
   const validatePasscode = async (code: string) => {
     try {
-      const r = await fetch((import.meta.env.VITE_API_URL || '') + '/login', {
+      const r = await fetch('/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
