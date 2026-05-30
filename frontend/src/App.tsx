@@ -527,7 +527,7 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
   });
 
   const totalHorasExtras = horasExtrasFiltradas.reduce((sum, h) => sum + (h.horas || 0), 0);
-  const valorHoraUSD = colaborador ? (colaborador.sueldo / 30 / 8) : 0;
+  const valorHoraUSD = colaborador ? ((colaborador.sueldo / 30 / 8) * 1.5) : 0;
   const montoHorasExtrasUSD = totalHorasExtras * valorHoraUSD;
   const montoHorasExtrasBs = montoHorasExtrasUSD * (bcvRate ?? 0);
 
@@ -1467,7 +1467,7 @@ function HorasExtrasView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
 
           {(() => {
             const colab = colaboradores.find(c => c.id === summaryColabId);
-            const valorHoraUSD = colab ? (colab.sueldo / 30 / 8) : 0;
+            const valorHoraUSD = colab ? ((colab.sueldo / 30 / 8) * 1.5) : 0;
             const valorHoraBs = bcvRate ? (valorHoraUSD * bcvRate) : 0;
             const acumuladoUSD = getQuincenalHours(summaryColabId) * valorHoraUSD;
             const acumuladoBs = acumuladoUSD * (bcvRate || 0);
