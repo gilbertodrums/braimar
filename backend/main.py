@@ -66,6 +66,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 BCV_CACHE_FILE = Path(__file__).parent / "bcv_cache.json"
 HORAS_EXTRAS_FILE = Path(__file__).parent / "horas_extras.json"
+COLABORADORES_FILE = Path(__file__).parent / "colaboradores.json"
 
 DEFAULT_PIN = "052026"
 
@@ -246,8 +247,16 @@ def _read_colaboradores() -> list:
         response = supabase.table("colaboradores").select("*").execute()
         return response.data or []
     except Exception as e:
-        logging.error(f"Error reading from Supabase: {e}")
+        logging.warning(f"Supabase colaboradores no disponible, usando JSON local: {e}")
+        try:
+            if COLABORADORES_FILE.exists():
+                return json.loads(COLABORADORES_FILE.read_text(encoding="utf-8"))
+        except Exception as je:
+            logging.error(f"Error leyendo colaboradores.json: {je}")
         return []
+
+def _write_colaboradores_local(data: list) -> None:
+    COLABORADORES_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 def _read_pagos_index() -> list:
     try:
@@ -367,7 +376,11 @@ async def create_colaborador(
         response = supabase.table("colaboradores").insert(nuevo).execute()
         return response.data[0]
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.warning(f"Supabase insert colaboradores falló, guardando en JSON local: {e}")
+        colabs = _read_colaboradores()
+        colabs.append(nuevo)
+        _write_colaboradores_local(colabs)
+        return nuevo
 
 @app.put("/colaboradores/{colaborador_id}")
 async def update_colaborador(
@@ -384,7 +397,15 @@ async def update_colaborador(
             raise HTTPException(status_code=404, detail="Colaborador no encontrado")
         return response.data[0]
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.warning(f"Supabase update colaboradores falló, actualizando JSON local: {e}")
+        colabs = _read_colaboradores()
+        for i, c in enumerate(colabs):
+            if c["id"] == colaborador_id:
+                updated["id"] = colaborador_id
+                colabs[i] = updated
+                _write_colaboradores_local(colabs)
+                return updated
+        raise HTTPException(status_code=404, detail="Colaborador no encontrado")
 
 @app.delete("/colaboradores/{colaborador_id}", status_code=204)
 async def delete_colaborador(
@@ -409,7 +430,12 @@ async def delete_colaborador(
         if not response.data:
             raise HTTPException(status_code=404, detail="Colaborador no encontrado")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.warning(f"Supabase delete colaboradores falló, eliminando del JSON local: {e}")
+        colabs = _read_colaboradores()
+        nuevos = [c for c in colabs if c["id"] != colaborador_id]
+        if len(nuevos) == len(colabs):
+            raise HTTPException(status_code=404, detail="Colaborador no encontrado")
+        _write_colaboradores_local(nuevos)
 
 @app.post("/pagos", status_code=201)
 async def guardar_pago(
