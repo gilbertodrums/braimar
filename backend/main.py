@@ -224,7 +224,9 @@ class Colaborador(BaseModel):
     correo: str = ''
     fecha_ingreso: str   # ISO format: YYYY-MM-DD
     tipo_turno: str      # "completo" | "medio"
-    sueldo: float = 0.0  # Sueldo en bolívares
+    sueldo: float = 0.0  # Sueldo base en USD
+    bono_alimentacion: float = 40.0  # Bono de alimentación en USD
+    bonos: float = 120.0  # Otros bonos en USD
 
 class EnviarReciboRequest(BaseModel):
     email_destinatario: str
