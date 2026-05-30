@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Request, Response, status, Query, Header
+from urllib.parse import urlparse
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, FileResponse
 import logging
@@ -72,6 +73,35 @@ DEFAULT_PIN = "052026"
 
 # Challenge temporal en memoria (sistema monousuario)
 _wn_challenge: dict = {}  # {"value": bytes, "expires": float}
+
+def get_client_rp(request: Request):
+    # 1. Intentar de X-Forwarded-Host (en Vercel siempre es la web de cara al usuario)
+    x_host = request.headers.get("x-forwarded-host")
+    x_proto = request.headers.get("x-forwarded-proto", "https")
+    if x_host:
+        rp_id = x_host.split(":")[0]
+        rp_origin = f"{x_proto}://{x_host}"
+        return rp_id, rp_origin
+
+    # 2. Intentar de Origin
+    origin = request.headers.get("origin")
+    if origin:
+        parsed = urlparse(origin)
+        rp_id = parsed.hostname or "localhost"
+        return rp_id, origin
+
+    # 3. Intentar de Referer
+    referer = request.headers.get("referer")
+    if referer:
+        parsed = urlparse(referer)
+        rp_id = parsed.hostname or "localhost"
+        rp_origin = f"{parsed.scheme}://{parsed.netloc}"
+        return rp_id, rp_origin
+
+    # 4. Fallback a env o defaults
+    rp_id = os.getenv("RP_ID", "localhost")
+    rp_origin = os.getenv("RP_ORIGIN", "http://localhost:5173")
+    return rp_id, rp_origin
 
 # Venezuela: UTC-4 (sin horario de verano)
 VET = datetime.timezone(datetime.timedelta(hours=-4))
@@ -585,11 +615,14 @@ async def get_finanzas(braimar_session: Optional[str] = Cookie(default=None)):
     return resultado
 
 @app.post("/webauthn/register/begin")
-async def wn_register_begin(braimar_session: Optional[str] = Cookie(default=None)):
+async def wn_register_begin(
+    request: Request,
+    braimar_session: Optional[str] = Cookie(default=None)
+):
     if not verify_session(braimar_session):
         raise HTTPException(status_code=401, detail="Sesión inválida o expirada")
 
-    rp_id     = os.getenv("RP_ID", "localhost")
+    rp_id, _ = get_client_rp(request)
     rp_name   = os.getenv("RP_NAME", "La Casa del Encaje")
 
     options = generate_registration_options(
@@ -620,8 +653,7 @@ async def wn_register_complete(
     if not challenge or time.time() > _wn_challenge.get("expires", 0):
         raise HTTPException(status_code=400, detail="Desafío expirado. Inténtalo de nuevo.")
 
-    rp_id    = os.getenv("RP_ID", "localhost")
-    rp_origin = os.getenv("RP_ORIGIN", "http://localhost:5173")
+    rp_id, rp_origin = get_client_rp(request)
     body = await request.json()
 
     try:
@@ -664,11 +696,11 @@ def _load_webauthn() -> dict | None:
     return None
 
 @app.post("/webauthn/auth/begin")
-async def wn_auth_begin():
+async def wn_auth_begin(request: Request):
     cred_data = _load_webauthn()
     if not cred_data:
         raise HTTPException(status_code=404, detail="Sin biometría registrada")
-    rp_id     = os.getenv("RP_ID", "localhost")
+    rp_id, _ = get_client_rp(request)
 
     options = generate_authentication_options(
         rp_id=rp_id,
@@ -691,8 +723,8 @@ async def wn_auth_complete(request: Request, response: Response):
     challenge = _wn_challenge.get("value")
     if not challenge or time.time() > _wn_challenge.get("expires", 0):
         raise HTTPException(status_code=400, detail="Desafío expirado. Inténtalo de nuevo.")
-    rp_id      = os.getenv("RP_ID", "localhost")
-    rp_origin  = os.getenv("RP_ORIGIN", "http://localhost:5173")
+    
+    rp_id, rp_origin = get_client_rp(request)
     body = await request.json()
 
     try:
