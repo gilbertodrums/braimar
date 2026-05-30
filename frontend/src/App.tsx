@@ -2301,6 +2301,7 @@ export default function App() {
   // ── LOGIN (centrado en pantalla) ──
   return (
     <div className="h-[100dvh] font-sans select-none touch-manipulation flex flex-col items-center justify-center">
+      <div className="bg-watermark" />
       <BcvBadge display={bcvDisplay} />
       <div className="relative z-10 flex flex-col items-center w-full px-4">
         <h1 className="text-[15px] font-normal text-white/80 mb-6 tracking-wide">Ingresa tu contraseña</h1>

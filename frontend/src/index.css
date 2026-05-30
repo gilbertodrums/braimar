@@ -10,7 +10,7 @@ html, body {
   background-attachment: fixed;
 }
 
-body::before {
+.bg-watermark {
   content: "";
   position: fixed;
   top: 50%;
@@ -22,10 +22,10 @@ body::before {
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-  opacity: 0.035; /* Faded watermark */
-  filter: blur(1px); /* Subtly blurred */
+  opacity: 0.08; /* Perfect elegancia visibility */
+  filter: blur(1.5px); /* Subtly blurred */
   pointer-events: none; /* Do not capture clicks */
-  z-index: -1;
+  z-index: 1; /* Drawn above body/html background gradient, but under relative z-10 containers */
 }
 
 @layer utilities {
