@@ -7,13 +7,13 @@
     { "source": "/finanzas",           "destination": "https://braimar.onrender.com/finanzas" },
     { "source": "/health",             "destination": "https://braimar.onrender.com/health" },
     { "source": "/enviar-recibo",      "destination": "https://braimar.onrender.com/enviar-recibo" },
-    { "source": "/colaboradores/:path*","destination": "https://braimar.onrender.com/colaboradores/:path*" },
     { "source": "/colaboradores",      "destination": "https://braimar.onrender.com/colaboradores" },
-    { "source": "/pagos/:path*",       "destination": "https://braimar.onrender.com/pagos/:path*" },
+    { "source": "/colaboradores/:path*","destination": "https://braimar.onrender.com/colaboradores/:path*" },
     { "source": "/pagos",              "destination": "https://braimar.onrender.com/pagos" },
-    { "source": "/webauthn/:path*",    "destination": "https://braimar.onrender.com/webauthn/:path*" },
-    { "source": "/horas-extras/:path*","destination": "https://braimar.onrender.com/horas-extras/:path*" },
+    { "source": "/pagos/:path*",       "destination": "https://braimar.onrender.com/pagos/:path*" },
     { "source": "/horas-extras",       "destination": "https://braimar.onrender.com/horas-extras" },
+    { "source": "/horas-extras/:path*","destination": "https://braimar.onrender.com/horas-extras/:path*" },
+    { "source": "/webauthn/:path*",    "destination": "https://braimar.onrender.com/webauthn/:path*" },
     { "source": "/(.*)",               "destination": "/index.html" }
   ]
 }
