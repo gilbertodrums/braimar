@@ -23,6 +23,7 @@ export default defineConfig({
       '/pagos':        'http://localhost:8081',
       '/finanzas':     'http://localhost:8081',
       '/webauthn':     'http://localhost:8081',
+      '/horas-extras': 'http://localhost:8081',
     },
   },
 })

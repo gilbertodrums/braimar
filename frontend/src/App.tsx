@@ -16,7 +16,9 @@ interface Colaborador {
   correo: string;
   fecha_ingreso: string;
   tipo_turno: 'completo' | 'medio';
-  sueldo: number;
+  sueldo: number; // Sueldo base
+  bono_alimentacion?: number;
+  bonos?: number;
 }
 
 interface Pago {
@@ -27,6 +29,17 @@ interface Pago {
   total: number;
   fecha_generado: string;
   hora_generado: string;
+}
+
+interface HoraExtra {
+  id: string;
+  colaborador_id: string;
+  fecha: string;
+  horas: number;
+  hora_inicio?: string;
+  hora_fin?: string;
+  fecha_generado?: string;
+  hora_generado?: string;
 }
 
 interface FinanzasPago {
@@ -51,7 +64,8 @@ type View =
   | 'colaborador-form'
   | 'pagos-realizados'
   | 'generar-pago'
-  | 'finanzas';
+  | 'finanzas'
+  | 'horas-extras';
 
 // ─── FORMULARIO COLABORADOR ───────────────────────────────────────────────────
 function ColaboradorForm({ inicial, onGuardar, onCancelar, bcvRate }: {
@@ -61,25 +75,59 @@ function ColaboradorForm({ inicial, onGuardar, onCancelar, bcvRate }: {
   bcvRate: number | null;
 }) {
   const [form, setForm] = useState({
-    nombre:        inicial?.nombre        ?? '',
-    apellido:      inicial?.apellido      ?? '',
-    cedula:        inicial?.cedula        ?? '',
-    telefono:      inicial?.telefono      ?? '',
-    correo:        inicial?.correo        ?? '',
-    fecha_ingreso: inicial?.fecha_ingreso ?? '',
-    tipo_turno:    inicial?.tipo_turno    ?? 'completo' as 'completo' | 'medio',
-    sueldo:        String(inicial?.sueldo ?? ''),
+    nombre:            inicial?.nombre            ?? '',
+    apellido:          inicial?.apellido          ?? '',
+    cedula:            inicial?.cedula            ?? '',
+    telefono:          inicial?.telefono          ?? '',
+    correo:            inicial?.correo            ?? '',
+    fecha_ingreso:     inicial?.fecha_ingreso     ?? '',
+    tipo_turno:        inicial?.tipo_turno        ?? 'completo' as 'completo' | 'medio',
+    sueldo:            String(inicial?.sueldo            ?? '120'),
+    bono_alimentacion: String(inicial?.bono_alimentacion ?? '40'),
+    bonos:             String(inicial?.bonos             ?? '120'),
   });
   const [guardando, setGuardando] = useState(false);
   const [error, setError]         = useState('');
 
-  const apellidoRef = useRef<HTMLInputElement>(null);
-  const cedulaRef   = useRef<HTMLInputElement>(null);
-  const telefonoRef = useRef<HTMLInputElement>(null);
-  const correoRef   = useRef<HTMLInputElement>(null);
-  const sueldoRef   = useRef<HTMLInputElement>(null);
+  const apellidoRef  = useRef<HTMLInputElement>(null);
+  const cedulaRef    = useRef<HTMLInputElement>(null);
+  const telefonoRef  = useRef<HTMLInputElement>(null);
+  const correoRef    = useRef<HTMLInputElement>(null);
+  const sueldoRef    = useRef<HTMLInputElement>(null);
+  const bonoAlimRef  = useRef<HTMLInputElement>(null);
+  const bonosRef     = useRef<HTMLInputElement>(null);
 
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleTurnoChange = (t: 'completo' | 'medio') => {
+    if (form.tipo_turno === t) return;
+    
+    const s = parseFloat(form.sueldo) || 0;
+    const ba = parseFloat(form.bono_alimentacion) || 0;
+    const b = parseFloat(form.bonos) || 0;
+    
+    let newS = s;
+    let newBa = ba;
+    let newB = b;
+    
+    if (t === 'medio') {
+      newS = s / 2;
+      newBa = ba / 2;
+      newB = b / 2;
+    } else if (t === 'completo') {
+      newS = s * 2;
+      newBa = ba * 2;
+      newB = b * 2;
+    }
+    
+    setForm(f => ({
+      ...f,
+      tipo_turno: t,
+      sueldo: String(newS),
+      bono_alimentacion: String(newBa),
+      bonos: String(newB)
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setError('');
@@ -87,7 +135,14 @@ function ColaboradorForm({ inicial, onGuardar, onCancelar, bcvRate }: {
     if (!form.cedula.trim())  { setError('La cédula es obligatoria'); return; }
     if (!form.fecha_ingreso)  { setError('La fecha de ingreso es obligatoria'); return; }
     setGuardando(true);
-    try   { await onGuardar({ ...form, sueldo: parseFloat(form.sueldo) || 0 }); }
+    try   {
+      await onGuardar({
+        ...form,
+        sueldo: parseFloat(form.sueldo) || 0,
+        bono_alimentacion: parseFloat(form.bono_alimentacion) || 0,
+        bonos: parseFloat(form.bonos) || 0,
+      });
+    }
     catch { setError('Error al guardar. Intenta de nuevo.'); setGuardando(false); }
   };
 
@@ -120,11 +175,10 @@ function ColaboradorForm({ inicial, onGuardar, onCancelar, bcvRate }: {
           className="bg-white/10 border border-white/20 rounded-lg px-3 py-2.5 text-white text-[11px] focus:outline-none focus:border-white/50 focus:bg-white/15 transition-all duration-150 [color-scheme:dark]"
         />
       </div>
-
-      {/* Sueldo */}
+      {/* Sueldo base */}
       <div className="flex flex-col gap-1">
         <label className="text-white/50 text-[10px] px-0.5 flex items-center gap-1">
-          <Banknote size={10} /> Sueldo (USD)
+          <Banknote size={10} /> Sueldo base (USD)
         </label>
         <div className="relative">
           <input
@@ -132,12 +186,11 @@ function ColaboradorForm({ inicial, onGuardar, onCancelar, bcvRate }: {
             type="text" inputMode="decimal" value={form.sueldo}
             onChange={e => set('sueldo', e.target.value.replace(/[^0-9.]/g, ''))}
             placeholder="0.00"
-            enterKeyHint="done"
-            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); sueldoRef.current?.blur(); } }}
+            enterKeyHint="next"
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); bonoAlimRef.current?.focus(); } }}
             className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2.5 text-white text-[11px] placeholder-white/30 focus:outline-none focus:border-white/50 focus:bg-white/15 transition-all duration-150"
           />
         </div>
-        {/* Conversión en tiempo real */}
         {(() => {
           const usd = parseFloat(form.sueldo);
           if (!usd || usd <= 0) return null;
@@ -160,6 +213,81 @@ function ColaboradorForm({ inicial, onGuardar, onCancelar, bcvRate }: {
         })()}
       </div>
 
+      {/* Bono de alimentación */}
+      <div className="flex flex-col gap-1">
+        <label className="text-white/50 text-[10px] px-0.5 flex items-center gap-1">
+          <Banknote size={10} /> Bono de alimentación (USD)
+        </label>
+        <div className="relative">
+          <input
+            ref={bonoAlimRef}
+            type="text" inputMode="decimal" value={form.bono_alimentacion}
+            onChange={e => set('bono_alimentacion', e.target.value.replace(/[^0-9.]/g, ''))}
+            placeholder="0.00"
+            enterKeyHint="next"
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); bonosRef.current?.focus(); } }}
+            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2.5 text-white text-[11px] placeholder-white/30 focus:outline-none focus:border-white/50 focus:bg-white/15 transition-all duration-150"
+          />
+        </div>
+        {(() => {
+          const usd = parseFloat(form.bono_alimentacion);
+          if (!usd || usd <= 0) return null;
+          const bs = bcvRate ? usd * bcvRate : null;
+          return (
+            <div className="flex items-center gap-2 mt-1 px-0.5">
+              <span className="text-white/40 text-[10px] font-medium">
+                $ {usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+              </span>
+              {bs !== null && (
+                <>
+                  <span className="text-white/20 text-[9px]">≈</span>
+                  <span className="text-white/70 text-[10px]">
+                    Bs. {bs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </>
+              )}
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* Bonos */}
+      <div className="flex flex-col gap-1">
+        <label className="text-white/50 text-[10px] px-0.5 flex items-center gap-1">
+          <Banknote size={10} /> Bonos (USD)
+        </label>
+        <div className="relative">
+          <input
+            ref={bonosRef}
+            type="text" inputMode="decimal" value={form.bonos}
+            onChange={e => set('bonos', e.target.value.replace(/[^0-9.]/g, ''))}
+            placeholder="0.00"
+            enterKeyHint="done"
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); bonosRef.current?.blur(); } }}
+            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2.5 text-white text-[11px] placeholder-white/30 focus:outline-none focus:border-white/50 focus:bg-white/15 transition-all duration-150"
+          />
+        </div>
+        {(() => {
+          const usd = parseFloat(form.bonos);
+          if (!usd || usd <= 0) return null;
+          const bs = bcvRate ? usd * bcvRate : null;
+          return (
+            <div className="flex items-center gap-2 mt-1 px-0.5">
+              <span className="text-white/40 text-[10px] font-medium">
+                $ {usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+              </span>
+              {bs !== null && (
+                <>
+                  <span className="text-white/20 text-[9px]">≈</span>
+                  <span className="text-white/70 text-[10px]">
+                    Bs. {bs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </>
+              )}
+            </div>
+          );
+        })()}
+      </div>
       {/* Tipo de turno */}
       <div className="flex flex-col gap-1">
         <label className="text-white/50 text-[10px] px-0.5 flex items-center gap-1">
@@ -167,7 +295,7 @@ function ColaboradorForm({ inicial, onGuardar, onCancelar, bcvRate }: {
         </label>
         <div className="grid grid-cols-2 gap-2">
           {(['completo', 'medio'] as const).map(t => (
-            <button key={t} type="button" onClick={() => set('tipo_turno', t)}
+            <button key={t} type="button" onClick={() => handleTurnoChange(t)}
               className={`py-2.5 rounded-lg text-[11px] font-medium border transition-all duration-150 ${
                 form.tipo_turno === t
                   ? 'bg-white text-gray-800 border-white shadow-sm'
@@ -284,22 +412,31 @@ function MisColaboradoresView({ onBack, onAbrirFormulario, colaboradores, onElim
                   {c.correo && <span className="text-white/40 text-[10px] flex items-center gap-0.5 break-all"><Mail size={9} />{c.correo}</span>}
                   {c.fecha_ingreso && <span className="text-white/40 text-[10px] flex items-center gap-0.5"><Calendar size={9} />{formatFecha(c.fecha_ingreso)}</span>}
                 </div>
-                {c.sueldo > 0 && (
-                  <div className="flex items-center gap-1.5 mt-1.5">
-                    <span className="text-white/50 text-[10px] flex items-center gap-0.5 font-medium">
-                      <Banknote size={9} />
-                      $ {c.sueldo.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
-                    </span>
-                    {bcvRateForCard && (
-                      <>
-                        <span className="text-white/20 text-[9px]">·</span>
-                        <span className="text-white/60 text-[10px]">
-                          ≈ Bs. {(c.sueldo * bcvRateForCard).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                )}
+                {/* Sueldo General */}
+                {(() => {
+                  const sueldoBase = c.sueldo || 0;
+                  const bonoAlim = c.bono_alimentacion ?? 40;
+                  const bonosVal = c.bonos ?? 120;
+                  const total = sueldoBase + bonoAlim + bonosVal;
+                  return (
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <span className="text-white/50 text-[10px] flex items-center gap-0.5 font-medium min-w-[90px]">
+                        <Banknote size={9} /> Sueldo general:
+                      </span>
+                      <span className="text-white/80 text-[10px] font-semibold">
+                        $ {total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                      </span>
+                      {bcvRateForCard && (
+                        <>
+                          <span className="text-white/20 text-[9px]">·</span>
+                          <span className="text-white/60 text-[10px]">
+                            ≈ Bs. {(total * bcvRateForCard).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
               <div className="flex items-center gap-0.5 shrink-0">
                 <button onClick={() => onEditar(c)} className="w-7 h-7 flex items-center justify-center rounded-full text-white/40 hover:text-white hover:bg-white/10 transition-all">
@@ -354,6 +491,7 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
   const [error, setError]                 = useState('');
   const [enviando, setEnviando]           = useState(false);
   const [exitoEnvio, setExitoEnvio]       = useState<'ok' | 'error' | null>(null);
+  const [horasExtras, setHorasExtras]     = useState<HoraExtra[]>([]);
 
   useEffect(() => {
     fetch((import.meta.env.VITE_API_URL || '') + '/colaboradores', { credentials: 'include' })
@@ -362,11 +500,39 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    if (selectedId) {
+      fetch((import.meta.env.VITE_API_URL || '') + '/horas-extras', { credentials: 'include' })
+        .then(r => r.ok ? r.json() : [])
+        .then(setHorasExtras)
+        .catch(() => {});
+    }
+  }, [selectedId]);
+
   const colaborador = colaboradores.find(c => c.id === selectedId) ?? null;
   const sueldoQuincenalUSD = colaborador ? (colaborador.sueldo ?? 0) / 2 : 0;
   const sueldoQuincenalBs = sueldoQuincenalUSD * (bcvRate ?? 0);
+
+  const bonoAlimQuincenalUSD = colaborador ? (colaborador.bono_alimentacion ?? 40) / 2 : 0;
+  const bonoAlimQuincenalBs = bonoAlimQuincenalUSD * (bcvRate ?? 0);
+
+  const bonosQuincenalUSD = colaborador ? (colaborador.bonos ?? 120) / 2 : 0;
+  const bonosQuincenalBs = bonosQuincenalUSD * (bcvRate ?? 0);
+
+  // Filtrar horas extras del colaborador en el periodo especificado
+  const horasExtrasFiltradas = horasExtras.filter(h => {
+    if (h.colaborador_id !== selectedId) return false;
+    if (!h.fecha) return false;
+    return h.fecha >= desde && h.fecha <= hasta;
+  });
+
+  const totalHorasExtras = horasExtrasFiltradas.reduce((sum, h) => sum + (h.horas || 0), 0);
+  const valorHoraUSD = colaborador ? (colaborador.sueldo / 30 / 8) : 0;
+  const montoHorasExtrasUSD = totalHorasExtras * valorHoraUSD;
+  const montoHorasExtrasBs = montoHorasExtrasUSD * (bcvRate ?? 0);
+
   const bonoNum         = parseFloat(bono) || 0;
-  const totalPagar      = sueldoQuincenalBs + bonoNum;
+  const totalPagar      = sueldoQuincenalBs + bonoAlimQuincenalBs + bonosQuincenalBs + montoHorasExtrasBs + bonoNum;
 
   const formatBs = (n: number) =>
     'Bs. ' + n.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -462,19 +628,42 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
       doc.text('CONCEPTOS', col1 + 3, y);
       y += 10;
 
+      // Cabecera de la tabla de conceptos
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(120, 120, 130);
+      doc.text('Concepto', col1, y);
+      doc.text('Tipo', col1 + 100, y);
+      doc.text('Monto', W - margin, y, { align: 'right' });
+      y += 3;
+      doc.setDrawColor(220, 220, 230);
+      doc.setLineWidth(0.3);
+      doc.line(margin, y, W - margin, y);
+      y += 7;
+
       // Tabla de conceptos
-      const addConcepto = (concepto: string, monto: string, bold = false) => {
+      const addConcepto = (concepto: string, tipo: string, monto: string, bold = false) => {
         doc.setFont('helvetica', bold ? 'bold' : 'normal');
-        doc.setFontSize(9);
+        doc.setFontSize(8.5);
         doc.setTextColor(bold ? 10 : 50, bold ? 10 : 50, bold ? 10 : 60);
         doc.text(concepto, col1, y);
+        if (tipo) {
+          doc.text(tipo, col1 + 100, y);
+        }
         doc.setTextColor(bold ? 0 : 40, bold ? 80 : 40, bold ? 0 : 40);
         doc.text(monto, W - margin, y, { align: 'right' });
         y += 8;
       };
 
-      addConcepto(`Sueldo Quincenal ($${sueldoQuincenalUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD)`, formatBs(sueldoQuincenalBs));
-      addConcepto('Bono de asistencia y puntualidad', formatBs(bonoNum));
+      addConcepto(`Sueldo Quincenal ($${sueldoQuincenalUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD)`, 'Salarial', formatBs(sueldoQuincenalBs));
+      addConcepto(`Bono de Alimentación Quincenal ($${bonoAlimQuincenalUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD)`, 'No salarial', formatBs(bonoAlimQuincenalBs));
+      addConcepto(`Bonos Quincenal ($${bonosQuincenalUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD)`, 'No salarial', formatBs(bonosQuincenalBs));
+      if (totalHorasExtras > 0) {
+        addConcepto(`Horas Extras (${totalHorasExtras} hs x $${valorHoraUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD)`, 'Salarial', formatBs(montoHorasExtrasBs));
+      }
+      if (bonoNum > 0) {
+        addConcepto('Ajuste manual / Bono extra', 'No salarial', formatBs(bonoNum));
+      }
 
       // Línea total
       y += 1;
@@ -482,7 +671,7 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
       doc.setLineWidth(0.5);
       doc.line(margin, y, W - margin, y);
       y += 6;
-      addConcepto('TOTAL A PAGAR', formatBs(totalPagar), true);
+      addConcepto('TOTAL A PAGAR', '', formatBs(totalPagar), true);
 
       // ── LÍNEA DIVISORA ─────────────────────────────────────────────────
       y += 3;
@@ -625,7 +814,13 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
           <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 flex flex-wrap gap-x-4 gap-y-1">
             <span className="text-white/40 text-[10px] flex items-center gap-0.5"><IdCard size={9} />{colaborador.cedula}</span>
             <span className="text-white/40 text-[10px] flex items-center gap-0.5">
-              <Banknote size={9} />Sueldo mensual: $ {colaborador.sueldo?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0.00'} USD
+              <Banknote size={9} />Sueldo base: $ {(colaborador.sueldo ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+            </span>
+            <span className="text-white/40 text-[10px] flex items-center gap-0.5">
+              <Banknote size={9} />Bono alim.: $ {(colaborador.bono_alimentacion ?? 40).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+            </span>
+            <span className="text-white/40 text-[10px] flex items-center gap-0.5">
+              <Banknote size={9} />Bonos: $ {(colaborador.bonos ?? 120).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
             </span>
             <span className="text-white/40 text-[10px] flex items-center gap-0.5">
               <Clock size={9} />{colaborador.tipo_turno === 'completo' ? 'Turno completo' : 'Medio turno'}
@@ -669,13 +864,29 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
           <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 flex flex-col gap-1.5">
             <p className="text-white/40 text-[9px] uppercase tracking-widest mb-1">Resumen del recibo</p>
             <div className="flex justify-between text-[10px]">
-              <span className="text-white/50">Sueldo quincenal ($ {sueldoQuincenalUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD)</span>
+              <span className="text-white/50">Sueldo quincenal base ($ {sueldoQuincenalUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD)</span>
               <span className="text-white/80">{formatBs(sueldoQuincenalBs)}</span>
             </div>
             <div className="flex justify-between text-[10px]">
-              <span className="text-white/50">Bono asistencia y puntualidad</span>
-              <span className="text-white/80">{formatBs(bonoNum)}</span>
+              <span className="text-white/50">Bono alimentación quincenal ($ {bonoAlimQuincenalUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD)</span>
+              <span className="text-white/80">{formatBs(bonoAlimQuincenalBs)}</span>
             </div>
+            <div className="flex justify-between text-[10px]">
+              <span className="text-white/50">Bonos quincenal ($ {bonosQuincenalUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD)</span>
+              <span className="text-white/80">{formatBs(bonosQuincenalBs)}</span>
+            </div>
+            {totalHorasExtras > 0 && (
+              <div className="flex justify-between text-[10px]">
+                <span className="text-white/50">Horas extras ({totalHorasExtras} hs x $ {valorHoraUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD)</span>
+                <span className="text-white/80">{formatBs(montoHorasExtrasBs)}</span>
+              </div>
+            )}
+            {bonoNum > 0 && (
+              <div className="flex justify-between text-[10px]">
+                <span className="text-white/50">Bono extra (ajuste manual)</span>
+                <span className="text-white/80">{formatBs(bonoNum)}</span>
+              </div>
+            )}
             <div className="h-px bg-white/10 my-0.5" />
             <div className="flex justify-between text-[11px]">
               <span className="text-white font-medium">Total a pagar</span>
@@ -743,7 +954,7 @@ function PagosRealizadosView({ onBack }: { onBack: () => void }) {
   useEffect(() => {
     if (!selectedId) { setPagos([]); return; }
     setCargando(true);
-    fetch((import.meta.env.VITE_API_URL || '') + `/pagos?colaborador_id=${selectedId}`, { credentials: 'include' })
+    fetch(`/pagos?colaborador_id=${selectedId}`, { credentials: 'include' })
       .then(r => r.ok ? r.json() : [])
       .then(setPagos)
       .catch(() => setPagos([]))
@@ -760,7 +971,7 @@ function PagosRealizadosView({ onBack }: { onBack: () => void }) {
   const verPDF = async (pago: Pago) => {
     setAbriendo(pago.id);
     try {
-      const r = await fetch((import.meta.env.VITE_API_URL || '') + `/pagos/${pago.id}/pdf`, { credentials: 'include' });
+      const r = await fetch(`/pagos/${pago.id}/pdf`, { credentials: 'include' });
       if (!r.ok) return;
       const blob = await r.blob();
       const url = URL.createObjectURL(blob);
@@ -969,6 +1180,573 @@ function ControlFinanzasView({ onBack, bcvRate }: { onBack: () => void; bcvRate:
   );
 }
 
+// ─── VISTA: HORAS EXTRAS ──────────────────────────────────────────────────────
+function HorasExtrasView({ onBack, bcvRate }: { onBack: () => void; bcvRate: number | null }) {
+  const getVenezuelaDate = () => {
+    const d = new Date();
+    const utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+    return new Date(utc + (3600000 * -4));
+  };
+
+  const vetToday = getVenezuelaDate();
+  const [selectedDate, setSelectedDate] = useState<Date>(vetToday);
+  const [currentYear, setCurrentYear] = useState(vetToday.getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(vetToday.getMonth()); // 0-11
+  
+  const [colaboradores, setColaboradores] = useState<Colaborador[]>([]);
+  const [horasExtras, setHorasExtras] = useState<HoraExtra[]>([]);
+  const [cargando, setCargando] = useState(true);
+  
+  // Modal states
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editEntry, setEditEntry] = useState<HoraExtra | null>(null);
+  
+  // Form states inside modal
+  const [colabId, setColabId] = useState('');
+  const [horasVal, setHorasVal] = useState('1');
+  const [horaInicio, setHoraInicio] = useState('');
+  const [horaFin, setHoraFin] = useState('');
+  const [isRange, setIsRange] = useState(false);
+  const [errorModal, setErrorModal] = useState('');
+  const [guardando, setGuardando] = useState(false);
+
+  // Selected collaborator for quincena summary dropdown
+  const [summaryColabId, setSummaryColabId] = useState('');
+
+  const cargarDatos = useCallback(async () => {
+    setCargando(true);
+    try {
+      const colabRes = await fetch((import.meta.env.VITE_API_URL || '') + '/colaboradores', { credentials: 'include' });
+      if (colabRes.ok) {
+        const colabData = await colabRes.json();
+        setColaboradores(colabData);
+        if (colabData.length > 0) {
+          setColabId(colabData[0].id);
+          setSummaryColabId(colabData[0].id);
+        }
+      }
+      const extrasRes = await fetch((import.meta.env.VITE_API_URL || '') + '/horas-extras', { credentials: 'include' });
+      if (extrasRes.ok) {
+        setHorasExtras(await extrasRes.json());
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setCargando(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    cargarDatos();
+  }, [cargarDatos]);
+
+  // Calendar logic
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const startDay = new Date(currentYear, currentMonth, 1).getDay(); // 0 = Sun
+  
+  const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  const diasSemana = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
+
+  const prevMonth = () => {
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(y => y - 1);
+    } else {
+      setCurrentMonth(m => m - 1);
+    }
+  };
+
+  const nextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(y => y + 1);
+    } else {
+      setCurrentMonth(m => m + 1);
+    }
+  };
+
+  // Helper to format date key YYYY-MM-DD
+  const formatDateKey = (y: number, m: number, d: number) => {
+    return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  };
+
+  const selectedDateKey = selectedDate ? formatDateKey(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate()) : '';
+
+  // Get overtime entries for selected day
+  const entriesForDay = horasExtras.filter(h => h.fecha === selectedDateKey);
+
+  // Check if a day has any overtime entries
+  const dayHasEntries = (d: number) => {
+    const key = formatDateKey(currentYear, currentMonth, d);
+    return horasExtras.some(h => h.fecha === key);
+  };
+
+  // Calculate quincena range for selectedDate
+  const getQuincenaRange = (date: Date) => {
+    const y = date.getFullYear();
+    const m = date.getMonth();
+    const d = date.getDate();
+    let desde, hasta;
+    if (d <= 15) {
+      desde = new Date(y, m, 1);
+      hasta = new Date(y, m, 15);
+    } else {
+      desde = new Date(y, m, 16);
+      hasta = new Date(y, m + 1, 0); // last day of month
+    }
+    return { desde, hasta };
+  };
+
+  const { desde: qDesde, hasta: qHasta } = getQuincenaRange(selectedDate);
+  const qDesdeKey = formatDateKey(qDesde.getFullYear(), qDesde.getMonth(), qDesde.getDate());
+  const qHastaKey = formatDateKey(qHasta.getFullYear(), qHasta.getMonth(), qHasta.getDate());
+
+  // Calculate total quincenal hours for summaryColabId
+  const getQuincenalHours = (colabId: string) => {
+    if (!colabId) return 0;
+    return horasExtras
+      .filter(h => h.colaborador_id === colabId && h.fecha >= qDesdeKey && h.fecha <= qHastaKey)
+      .reduce((sum, h) => sum + (h.horas || 0), 0);
+  };
+
+  // Format date display
+  const formatFechaDisplay = (date: Date) => {
+    return `${date.getDate()} de ${meses[date.getMonth()]} de ${date.getFullYear()}`;
+  };
+
+  const formatFechaQuincena = (date: Date) => {
+    return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
+  };
+
+  // Auto calculate hours from range
+  useEffect(() => {
+    if (isRange && horaInicio && horaFin) {
+      const [h1, m1] = horaInicio.split(':').map(Number);
+      const [h2, m2] = horaFin.split(':').map(Number);
+      let diffMins = (h2 * 60 + m2) - (h1 * 60 + m1);
+      if (diffMins < 0) diffMins += 24 * 60; // night shift crossover
+      const hours = parseFloat((diffMins / 60).toFixed(2));
+      setHorasVal(String(hours));
+    }
+  }, [isRange, horaInicio, horaFin]);
+
+  const handleOpenAdd = () => {
+    setEditEntry(null);
+    if (colaboradores.length > 0) {
+      setColabId(colaboradores[0].id);
+    }
+    setHorasVal('1');
+    setHoraInicio('');
+    setHoraFin('');
+    setIsRange(false);
+    setErrorModal('');
+    setModalOpen(true);
+  };
+
+  const handleOpenEdit = (entry: HoraExtra) => {
+    setEditEntry(entry);
+    setColabId(entry.colaborador_id);
+    setHorasVal(String(entry.horas));
+    if (entry.hora_inicio && entry.hora_fin) {
+      setIsRange(true);
+      setHoraInicio(entry.hora_inicio);
+      setHoraFin(entry.hora_fin);
+    } else {
+      setIsRange(false);
+      setHoraInicio('');
+      setHoraFin('');
+    }
+    setErrorModal('');
+    setModalOpen(true);
+  };
+
+  const handleGuardar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorModal('');
+    const h = parseFloat(horasVal);
+    if (!colabId) { setErrorModal('Selecciona un colaborador'); return; }
+    if (isNaN(h) || h <= 0) { setErrorModal('Ingresa una cantidad válida de horas'); return; }
+    
+    setGuardando(true);
+    
+    const payload = {
+      colaborador_id: colabId,
+      fecha: selectedDateKey,
+      horas: h,
+      hora_inicio: isRange ? horaInicio || null : null,
+      hora_fin: isRange ? horaFin || null : null
+    };
+
+    try {
+      let res;
+      if (editEntry) {
+        res = await fetch(`/horas-extras/${editEntry.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload)
+        });
+      } else {
+        res = await fetch((import.meta.env.VITE_API_URL || '') + '/horas-extras', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload)
+        });
+      }
+
+      if (res.ok) {
+        const item = await res.json();
+        if (editEntry) {
+          setHorasExtras(prev => prev.map(x => x.id === editEntry.id ? item : x));
+        } else {
+          setHorasExtras(prev => [...prev, item]);
+        }
+        setModalOpen(false);
+      } else {
+        setErrorModal('Error al registrar. Intenta nuevamente.');
+      }
+    } catch {
+      setErrorModal('Error de conexión con el servidor.');
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const handleEliminar = async (id: string) => {
+    try {
+      const res = await fetch(`/horas-extras/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (res.ok) {
+        setHorasExtras(prev => prev.filter(x => x.id !== id));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const formatBs = (n: number) =>
+    'Bs. ' + n.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  return (
+    <>
+      <div className="pt-10 pb-4">
+        <button onClick={onBack} className="flex items-center gap-1.5 text-white/50 hover:text-white transition-colors mb-4">
+          <ArrowLeft size={13} /><span className="text-[11px]">Volver</span>
+        </button>
+        <p className="text-white/40 text-[9px] uppercase tracking-widest mb-1">Pago a colaboradores</p>
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-light text-white">Horas extras</h1>
+          <button onClick={handleOpenAdd} disabled={colaboradores.length === 0}
+            className="flex items-center gap-1 bg-white text-gray-800 text-[10px] font-medium px-3 py-1.5 rounded-full hover:bg-white/90 active:scale-95 transition-all">
+            <Plus size={11} /> Registrar
+          </button>
+        </div>
+      </div>
+
+      {/* ── PANEL DE ACUMULADOS POR QUINCENA ── */}
+      {colaboradores.length > 0 && (
+        <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 mb-4 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <span className="text-white/50 text-[9px] uppercase tracking-widest font-semibold">Resumen Quincenal ({formatFechaQuincena(qDesde)} al {formatFechaQuincena(qHasta)})</span>
+            <div className="relative shrink-0">
+              <select
+                value={summaryColabId}
+                onChange={e => setSummaryColabId(e.target.value)}
+                className="appearance-none bg-white/10 border border-white/15 rounded-lg pl-2.5 pr-6 py-1 text-[10px] text-white focus:outline-none focus:bg-white/20 transition-all [color-scheme:dark]"
+              >
+                {colaboradores.map(c => (
+                  <option key={c.id} value={c.id} className="bg-gray-800">{c.nombre} {c.apellido}</option>
+                ))}
+              </select>
+              <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
+            </div>
+          </div>
+
+          {(() => {
+            const colab = colaboradores.find(c => c.id === summaryColabId);
+            const valorHoraUSD = colab ? (colab.sueldo / 30 / 8) : 0;
+            const valorHoraBs = bcvRate ? (valorHoraUSD * bcvRate) : 0;
+            const acumuladoUSD = getQuincenalHours(summaryColabId) * valorHoraUSD;
+            const acumuladoBs = acumuladoUSD * (bcvRate || 0);
+
+            return (
+              <>
+                <div className="flex items-center justify-between pt-1.5 border-t border-white/5">
+                  <div>
+                    <p className="text-white/40 text-[9px]">Horas acumuladas</p>
+                    <p className="text-white text-base font-semibold">{getQuincenalHours(summaryColabId)} hs</p>
+                    <p className="text-white/50 text-[9px] mt-0.5">
+                      Total: $ {acumuladoUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-white/40 text-[9px]">Valor quincenal estimado</p>
+                    <p className="text-white text-[14px] font-semibold text-emerald-300">
+                      ≈ {formatBs(acumuladoBs)}
+                    </p>
+                    <p className="text-white/20 text-[9px]">con referencia BCV</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 mt-1 border-t border-white/5 bg-white/5 -mx-4 -mb-4 px-4 py-2.5 rounded-b-2xl">
+                  <div>
+                    <p className="text-white/40 text-[9px] uppercase tracking-wide">Valor de 1 hora extra</p>
+                    <p className="text-white text-[11px] font-medium mt-0.5">
+                      $ {valorHoraUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                    </p>
+                  </div>
+                  {bcvRate && (
+                    <div className="text-right">
+                      <p className="text-white/40 text-[9px]">Equivalente BCV</p>
+                      <p className="text-emerald-300 text-[11px] font-medium mt-0.5">
+                        ≈ {formatBs(valorHoraBs)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* ── CALENDARIO MENSUAL ── */}
+      <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 mb-4 select-none">
+        {/* Cabecera del mes */}
+        <div className="flex items-center justify-between mb-4">
+          <button onClick={prevMonth} className="p-1.5 hover:bg-white/10 rounded-lg text-white/50 hover:text-white transition-all">
+            <ArrowLeft size={14} />
+          </button>
+          <span className="text-white font-medium text-xs tracking-wider uppercase">
+            {meses[currentMonth]} {currentYear}
+          </span>
+          <button onClick={nextMonth} className="p-1.5 hover:bg-white/10 rounded-lg text-white/50 hover:text-white transition-all rotate-180">
+            <ArrowLeft size={14} />
+          </button>
+        </div>
+
+        {/* Días de la semana */}
+        <div className="grid grid-cols-7 gap-y-2 mb-2 text-center">
+          {diasSemana.map((d, i) => (
+            <span key={i} className="text-white/30 text-[9px] font-bold uppercase">{d}</span>
+          ))}
+        </div>
+
+        {/* Cuadrícula de días */}
+        <div className="grid grid-cols-7 gap-y-1.5 text-center">
+          {Array.from({ length: startDay }).map((_, i) => (
+            <div key={`empty-${i}`} className="h-8" />
+          ))}
+          {Array.from({ length: daysInMonth }).map((_, i) => {
+            const day = i + 1;
+            const isToday = vetToday.getDate() === day && vetToday.getMonth() === currentMonth && vetToday.getFullYear() === currentYear;
+            const isSelected = selectedDate && selectedDate.getDate() === day && selectedDate.getMonth() === currentMonth && selectedDate.getFullYear() === currentYear;
+            const hasData = dayHasEntries(day);
+
+            return (
+              <button
+                key={`day-${day}`}
+                onClick={() => setSelectedDate(new Date(currentYear, currentMonth, day))}
+                className="relative h-8 flex flex-col items-center justify-center focus:outline-none group active:scale-90 transition-all"
+              >
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-medium transition-all ${
+                  isSelected 
+                    ? 'bg-white text-gray-800 font-bold shadow-md' 
+                    : isToday 
+                      ? 'border border-white/40 text-white font-semibold' 
+                      : 'text-white/80 hover:bg-white/5'
+                }`}>
+                  {day}
+                </div>
+                {/* Indicador de registro */}
+                {hasData && (
+                  <span className={`absolute bottom-0.5 w-1 h-1 rounded-full ${
+                    isSelected ? 'bg-gray-800' : 'bg-blue-400 animate-pulse'
+                  }`} />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── LISTA DE REGISTROS DEL DÍA SELECCIONADO ── */}
+      <div className="flex flex-col gap-2 pb-16">
+        <p className="text-white/40 text-[9px] uppercase tracking-widest font-bold px-1 mb-1">
+          Registros del {selectedDate ? formatFechaDisplay(selectedDate) : ''}
+        </p>
+
+        {cargando && <p className="text-white/50 text-[11px] text-center mt-4">Cargando...</p>}
+
+        {!cargando && entriesForDay.length === 0 && (
+          <div className="flex flex-col items-center justify-center p-8 bg-white/5 border border-white/10 rounded-2xl text-center">
+            <Clock size={20} className="text-white/20 mb-1.5" />
+            <p className="text-white/30 text-[10px]">No hay horas extras registradas para este día.</p>
+          </div>
+        )}
+
+        {!cargando && entriesForDay.map(h => {
+          const colab = colaboradores.find(c => c.id === h.colaborador_id);
+          return (
+            <div key={h.id} className="bg-white/10 backdrop-blur-md border border-white/15 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-white font-medium text-[11px] truncate">
+                  {colab ? `${colab.nombre} ${colab.apellido}` : 'Colaborador eliminado'}
+                </p>
+                <div className="flex items-center gap-1.5 text-white/40 text-[9px] mt-0.5">
+                  <Clock size={8} />
+                  <span>{h.horas} {h.horas === 1 ? 'hora' : 'horas'}</span>
+                  {h.hora_inicio && h.hora_fin && (
+                    <>
+                      <span>·</span>
+                      <span>({h.hora_inicio} a {h.hora_fin})</span>
+                    </>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-0.5 shrink-0">
+                <button onClick={() => handleOpenEdit(h)} className="w-7 h-7 flex items-center justify-center rounded-full text-white/40 hover:text-white hover:bg-white/10 transition-all">
+                  <Pencil size={11} />
+                </button>
+                <button onClick={() => handleEliminar(h.id)} className="w-7 h-7 flex items-center justify-center rounded-full text-white/40 hover:text-red-300 hover:bg-red-400/15 transition-all">
+                  <Trash2 size={11} />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── MODAL: AÑADIR/EDITAR HORA EXTRA ── */}
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm p-0 sm:items-center">
+          <form onSubmit={handleGuardar} className="bg-white/20 backdrop-blur-2xl border border-white/30 rounded-t-3xl w-full max-w-sm px-6 pt-5 pb-8 sm:rounded-2xl sm:p-6 sm:m-4 flex flex-col gap-4 animate-pop">
+            <div className="flex items-center justify-between">
+              <h3 className="text-white text-[14px] font-medium">
+                {editEntry ? 'Editar Horas Extras' : 'Registrar Horas Extras'}
+              </h3>
+              <button type="button" onClick={() => setModalOpen(false)} className="text-white/40 hover:text-white p-1 rounded-full hover:bg-white/10 transition-all">
+                <X size={14} />
+              </button>
+            </div>
+
+            {errorModal && (
+              <p className="text-red-300 text-[10px] bg-red-500/20 border border-red-400/30 rounded-lg px-3 py-2">{errorModal}</p>
+            )}
+
+            <div className="flex flex-col gap-3">
+              {/* Colaborador */}
+              <div className="flex flex-col gap-1">
+                <label className="text-white/50 text-[9px] px-0.5">Colaborador</label>
+                <div className="relative">
+                  <select
+                    value={colabId}
+                    onChange={e => setColabId(e.target.value)}
+                    disabled={!!editEntry}
+                    className="w-full appearance-none bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-[11px] text-white focus:outline-none focus:border-white/50 focus:bg-white/15 transition-all [color-scheme:dark] disabled:opacity-50"
+                  >
+                    {colaboradores.map(c => (
+                      <option key={c.id} value={c.id} className="bg-gray-800">{c.nombre} {c.apellido}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Fecha fija info */}
+              <div className="flex flex-col gap-0.5 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
+                <span className="text-white/35 text-[8px] uppercase tracking-wide">Fecha de registro</span>
+                <span className="text-white text-[10px] font-medium">{selectedDate ? formatFechaDisplay(selectedDate) : ''}</span>
+              </div>
+
+              {/* Rango de tiempo selector */}
+              <div className="flex flex-col gap-1.5 pt-1">
+                <div className="flex items-center justify-between px-0.5">
+                  <span className="text-white/50 text-[9px]">Calcular por rango de hora</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsRange(!isRange);
+                      if (isRange) { setHoraInicio(''); setHoraFin(''); }
+                    }}
+                    className={`text-[8.5px] px-2 py-0.5 rounded-full border transition-all ${
+                      isRange ? 'bg-white text-gray-800 border-white' : 'border-white/20 text-white/60 hover:bg-white/5'
+                    }`}
+                  >
+                    {isRange ? 'Sí, calcular' : 'No, ingresar manual'}
+                  </button>
+                </div>
+
+                {isRange ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-white/35 text-[8px] px-0.5">Desde</span>
+                      <input
+                        type="time"
+                        value={horaInicio}
+                        onChange={e => setHoraInicio(e.target.value)}
+                        required
+                        className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-[10px] text-white focus:outline-none focus:border-white/50 [color-scheme:dark]"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-white/35 text-[8px] px-0.5">Hasta</span>
+                      <input
+                        type="time"
+                        value={horaFin}
+                        onChange={e => setHoraFin(e.target.value)}
+                        required
+                        className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-[10px] text-white focus:outline-none focus:border-white/50 [color-scheme:dark]"
+                      />
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
+              {/* Cantidad de Horas */}
+              <div className="flex flex-col gap-1">
+                <label className="text-white/50 text-[9px] px-0.5">Cantidad de horas</label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={horasVal}
+                  onChange={e => setHorasVal(e.target.value.replace(/[^0-9.]/g, ''))}
+                  disabled={isRange}
+                  placeholder="1.0"
+                  className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-[11px] text-white placeholder-white/30 focus:outline-none focus:border-white/50 focus:bg-white/15 transition-all disabled:opacity-60"
+                />
+                {isRange && horaInicio && horaFin && (
+                  <span className="text-emerald-300 text-[8px] font-medium px-0.5">✓ Calculado automáticamente</span>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setModalOpen(false)}
+                className="flex-1 py-2.5 rounded-xl border border-white/20 text-white/70 text-[11px] hover:bg-white/5 transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={guardando}
+                className="flex-1 py-2.5 rounded-xl bg-white text-gray-800 font-semibold text-[11px] disabled:opacity-40 hover:bg-white/90 active:scale-95 transition-all"
+              >
+                {guardando ? 'Guardando…' : 'Guardar'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+    </>
+  );
+}
+
 // ─── ADMIN PANEL ──────────────────────────────────────────────────────────────
 function AdminPanel({ onLogout, bcvRate, biometriaHabilitada, onDesactivarBiometria }: {
   onLogout: () => void;
@@ -994,7 +1772,7 @@ function AdminPanel({ onLogout, bcvRate, biometriaHabilitada, onDesactivarBiomet
 
   const handleGuardarColaborador = async (data: Omit<Colaborador, 'id'>) => {
     if (editando) {
-      const r = await fetch((import.meta.env.VITE_API_URL || '') + `/colaboradores/${editando.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(data) });
+      const r = await fetch(`/colaboradores/${editando.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(data) });
       if (!r.ok) throw new Error();
       const updated = await r.json();
       setColaboradores(cs => cs.map(c => c.id === editando.id ? updated : c));
@@ -1009,7 +1787,7 @@ function AdminPanel({ onLogout, bcvRate, biometriaHabilitada, onDesactivarBiomet
   };
 
   const handleEliminar = async (id: string) => {
-    await fetch((import.meta.env.VITE_API_URL || '') + `/colaboradores/${id}`, { method: 'DELETE', credentials: 'include' });
+    await fetch(`/colaboradores/${id}`, { method: 'DELETE', credentials: 'include' });
     setColaboradores(cs => cs.filter(c => c.id !== id));
   };
 
@@ -1071,6 +1849,7 @@ function AdminPanel({ onLogout, bcvRate, biometriaHabilitada, onDesactivarBiomet
                 { label: 'Pagos realizados',   icon: <Banknote size={11} className="text-white/40" />, onClick: () => setView('pagos-realizados') },
                 { label: 'Generar pago',       icon: <CreditCard size={11} className="text-white/40" />, onClick: () => setView('generar-pago') },
                 { label: 'Control de finanzas', icon: <Banknote size={11} className="text-white/40" />,  onClick: () => setView('finanzas') },
+                { label: 'Horas extras',       icon: <Clock size={11} className="text-white/40" />,     onClick: () => setView('horas-extras') },
               ]}
             />
           </div>
@@ -1145,6 +1924,11 @@ function AdminPanel({ onLogout, bcvRate, biometriaHabilitada, onDesactivarBiomet
       {/* ── CONTROL DE FINANZAS ── */}
       {view === 'finanzas' && (
         <ControlFinanzasView onBack={volverAlMenu} bcvRate={bcvRate} />
+      )}
+
+      {/* ── HORAS EXTRAS ── */}
+      {view === 'horas-extras' && (
+        <HorasExtrasView onBack={volverAlMenu} bcvRate={bcvRate} />
       )}
     </div>
   );
@@ -1372,7 +2156,12 @@ export default function App() {
 
   const validatePasscode = async (code: string) => {
     try {
-      const r = await fetch((import.meta.env.VITE_API_URL || '') + '/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ pin: code }) });
+      const r = await fetch((import.meta.env.VITE_API_URL || '') + '/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ pin: code })
+      });
       if (r.ok) {
         setIsAuthenticated(true); setPasscode('');
         // Ofrecer biometría si está disponible y no está registrada aún

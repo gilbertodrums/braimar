@@ -65,6 +65,7 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 BCV_CACHE_FILE = Path(__file__).parent / "bcv_cache.json"
+HORAS_EXTRAS_FILE = Path(__file__).parent / "horas_extras.json"
 
 DEFAULT_PIN = "052026"
 
@@ -208,6 +209,13 @@ class ChangePinRequest(BaseModel):
     current_pin: str
     new_pin: str
 
+class HoraExtra(BaseModel):
+    colaborador_id: str
+    fecha: str          # YYYY-MM-DD
+    horas: float
+    hora_inicio: Optional[str] = None  # HH:MM
+    hora_fin: Optional[str] = None     # HH:MM
+
 class Colaborador(BaseModel):
     nombre: str
     apellido: str
@@ -246,6 +254,22 @@ def _read_pagos_index() -> list:
     except Exception as e:
         logging.error(f"Error reading pagos from Supabase: {e}")
         return []
+
+def _read_horas_extras() -> list:
+    try:
+        response = supabase.table("horas_extras").select("*").execute()
+        return response.data or []
+    except Exception as e:
+        logging.warning(f"Supabase horas_extras no disponible, usando JSON local: {e}")
+        try:
+            if HORAS_EXTRAS_FILE.exists():
+                return json.loads(HORAS_EXTRAS_FILE.read_text(encoding="utf-8"))
+        except Exception as je:
+            logging.error(f"Error leyendo horas_extras.json: {je}")
+        return []
+
+def _write_horas_extras_local(data: list) -> None:
+    HORAS_EXTRAS_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 @app.get("/me")
 async def check_session(braimar_session: Optional[str] = Cookie(default=None)):
@@ -749,4 +773,89 @@ async def change_pin(
     set_pin_hash(new_hash)
 
     return {"status": "ok"}
+
+
+@app.get("/horas-extras")
+async def get_horas_extras(
+    braimar_session: Optional[str] = Cookie(default=None)
+):
+    if not verify_session(braimar_session):
+        raise HTTPException(status_code=401, detail="Sesión inválida o expirada")
+    return _read_horas_extras()
+
+@app.post("/horas-extras", status_code=201)
+async def create_hora_extra(
+    payload: HoraExtra,
+    braimar_session: Optional[str] = Cookie(default=None)
+):
+    if not verify_session(braimar_session):
+        raise HTTPException(status_code=401, detail="Sesión inválida o expirada")
+    
+    nuevo = payload.model_dump()
+    nuevo["id"] = str(uuid.uuid4())
+    now = _vet_now()
+    nuevo["fecha_generado"] = now.strftime("%Y-%m-%d")
+    nuevo["hora_generado"] = now.strftime("%H:%M:%S")
+    
+    try:
+        response = supabase.table("horas_extras").insert(nuevo).execute()
+        return response.data[0]
+    except Exception as e:
+        logging.warning(f"Supabase horas_extras insert falló, guardando en JSON local: {e}")
+        extras = _read_horas_extras()
+        extras.append(nuevo)
+        _write_horas_extras_local(extras)
+        return nuevo
+
+@app.put("/horas-extras/{id}")
+async def update_hora_extra(
+    id: str,
+    payload: HoraExtra,
+    braimar_session: Optional[str] = Cookie(default=None)
+):
+    if not verify_session(braimar_session):
+        raise HTTPException(status_code=401, detail="Sesión inválida o expirada")
+    
+    updated = payload.model_dump()
+    try:
+        response = supabase.table("horas_extras").update(updated).eq("id", id).execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Registro no encontrado")
+        return response.data[0]
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.warning(f"Supabase horas_extras update falló, actualizando JSON local: {e}")
+        extras = _read_horas_extras()
+        for i, h in enumerate(extras):
+            if h["id"] == id:
+                updated["id"] = id
+                updated["fecha_generado"] = h.get("fecha_generado", _vet_now().strftime("%Y-%m-%d"))
+                updated["hora_generado"] = h.get("hora_generado", _vet_now().strftime("%H:%M:%S"))
+                extras[i] = updated
+                _write_horas_extras_local(extras)
+                return extras[i]
+        raise HTTPException(status_code=404, detail="Registro no encontrado")
+
+@app.delete("/horas-extras/{id}", status_code=204)
+async def delete_hora_extra(
+    id: str,
+    braimar_session: Optional[str] = Cookie(default=None)
+):
+    if not verify_session(braimar_session):
+        raise HTTPException(status_code=401, detail="Sesión inválida o expirada")
+    
+    try:
+        response = supabase.table("horas_extras").delete().eq("id", id).execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Registro no encontrado")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.warning(f"Supabase horas_extras delete falló, eliminando del JSON local: {e}")
+        extras = _read_horas_extras()
+        nuevos = [h for h in extras if h["id"] != id]
+        if len(nuevos) == len(extras):
+            raise HTTPException(status_code=404, detail="Registro no encontrado")
+        _write_horas_extras_local(nuevos)
 
