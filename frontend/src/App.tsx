@@ -2013,13 +2013,32 @@ export default function App() {
 
   // ── VERIFICAR SESIÓN ACTIVA AL RECARGAR ──
   useEffect(() => {
-    fetch((import.meta.env.VITE_API_URL || '') + '/me', { credentials: 'include' })
-      .then(r => {
-        if (r.ok) setIsAuthenticated(true);
-      })
-      .catch(() => {})
-      .finally(() => setCheckingSession(false));
+    // Primero hacemos ping al /health para despertar el backend de Render (cold start)
+    // Luego verificamos la sesión con reintentos para tolerar el tiempo de arranque
+    const checkSession = async () => {
+      // Intentar despertar el backend (sin bloquear)
+      fetch((import.meta.env.VITE_API_URL || '') + '/health').catch(() => {});
+      
+      // Intentar verificar sesión hasta 3 veces (en caso de cold start de Render)
+      let attempts = 0;
+      const maxAttempts = 3;
+      while (attempts < maxAttempts) {
+        try {
+          const r = await fetch((import.meta.env.VITE_API_URL || '') + '/me', { credentials: 'include' });
+          if (r.ok) { setIsAuthenticated(true); break; }
+          if (r.status === 401) break; // Sesión inválida, no reintentar
+          // Otro error (503, timeout), esperar y reintentar
+          if (attempts < maxAttempts - 1) await new Promise(res => setTimeout(res, 3000));
+        } catch {
+          if (attempts < maxAttempts - 1) await new Promise(res => setTimeout(res, 3000));
+        }
+        attempts++;
+      }
+      setCheckingSession(false);
+    };
+    checkSession();
   }, []);
+
 
   useEffect(() => {
     fetch((import.meta.env.VITE_API_URL || '') + '/bcv-rate').then(r => r.ok ? r.json() : null).then(data => {
@@ -2180,13 +2199,17 @@ export default function App() {
   if (checkingSession) {
     return (
       <div className="min-h-[100dvh] flex items-center justify-center bg-[#1a0533]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
-          <p className="text-white/40 text-xs tracking-widest uppercase">Verificando sesión...</p>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-2 border-purple-500/30 border-t-purple-400 rounded-full animate-spin" />
+          <div className="flex flex-col items-center gap-1">
+            <p className="text-white/60 text-xs tracking-widest uppercase">Conectando...</p>
+            <p className="text-white/30 text-[10px]">Iniciando servidor, un momento...</p>
+          </div>
         </div>
       </div>
     );
   }
+
 
   if (isAuthenticated) {
     return (

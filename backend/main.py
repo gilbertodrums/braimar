@@ -282,6 +282,16 @@ def _read_horas_extras() -> list:
 def _write_horas_extras_local(data: list) -> None:
     HORAS_EXTRAS_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
+@app.get("/health")
+async def health_check():
+    """Endpoint público para keep-alive y monitoreo. No requiere autenticación."""
+    try:
+        supabase.table("settings").select("key").limit(1).execute()
+        db_status = "ok"
+    except Exception as e:
+        db_status = f"error: {str(e)[:80]}"
+    return {"status": "ok", "db": db_status}
+
 @app.get("/me")
 async def check_session(braimar_session: Optional[str] = Cookie(default=None)):
     """Verifica si la sesión actual sigue siendo válida. Usado por el frontend al recargar."""
