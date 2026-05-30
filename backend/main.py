@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request, Response, status, Query
+from fastapi import FastAPI, HTTPException, Request, Response, status, Query, Header
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, FileResponse
 import logging
@@ -328,7 +328,9 @@ async def login(request: Request, response: Response, payload: PinRequest):
         expires=expire.strftime("%a, %d-%b-%Y %T GMT")
     )
 
-    return {"status": "ok"}
+    # Devolver el token en el body para que el frontend pueda guardarlo en localStorage
+    # Esto permite autenticacion por Authorization header, evitando problemas de cookies en proxies
+    return {"status": "ok", "token": encoded_jwt}
 
 
 @app.get("/bcv-rate")
@@ -776,6 +778,12 @@ def verify_session(token: Optional[str]) -> bool:
         return payload.get("sub") == "braimar_admin"
     except Exception:
         return False
+
+def get_token(braimar_session: Optional[str] = None, authorization: Optional[str] = None) -> Optional[str]:
+    """Extrae el token de Authorization header o cookie. Prioriza el header Bearer."""
+    if authorization and authorization.startswith("Bearer "):
+        return authorization[7:]
+    return braimar_session
 
 @app.post("/change-pin")
 @limiter.limit("10/minute")

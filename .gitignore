@@ -26,3 +26,5 @@ backend/pin.json
 backend/webauthn.json
 backend/colaboradores.json
 backend/pagos_index.json
+
+.vercel
