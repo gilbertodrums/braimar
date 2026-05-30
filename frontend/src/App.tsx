@@ -671,7 +671,8 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
       doc.setLineWidth(0.5);
       doc.line(margin, y, W - margin, y);
       y += 6;
-      addConcepto('TOTAL A PAGAR', '', formatBs(totalPagar), true);
+      const totalUSD = bcvRate ? (totalPagar / bcvRate) : 0;
+      addConcepto(`Total de ingresos quincenal ($${totalUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD)`, '', formatBs(totalPagar), true);
 
       // ── LÍNEA DIVISORA ─────────────────────────────────────────────────
       y += 3;
