@@ -681,7 +681,7 @@ async def wn_register_complete(
         "public_key":    bytes_to_base64url(verification.credential_public_key),
         "sign_count":    verification.sign_count,
     })
-    supabase.table("settings").upsert({"key": "webauthn_credential", "value": wn_data}).execute()
+    _save_webauthn(wn_data)
     _wn_challenge.clear()
     return {"status": "ok"}
 
@@ -693,7 +693,29 @@ def _load_webauthn() -> dict | None:
             return json.loads(resp.data[0]["value"])
     except Exception as e:
         logging.error(f"Error loading webauthn from Supabase: {e}")
+    
+    # Fallback local
+    try:
+        path = Path(__file__).parent / "webauthn.json"
+        if path.exists():
+            return json.loads(path.read_text(encoding="utf-8"))
+    except Exception as e:
+        logging.error(f"Error loading webauthn from local JSON: {e}")
     return None
+
+def _save_webauthn(wn_data: str):
+    # 1. Intentar guardar en Supabase
+    try:
+        supabase.table("settings").upsert({"key": "webauthn_credential", "value": wn_data}).execute()
+    except Exception as e:
+        logging.error(f"Error saving webauthn to Supabase settings: {e}")
+    
+    # 2. Siempre guardar en local JSON como respaldo
+    try:
+        path = Path(__file__).parent / "webauthn.json"
+        path.write_text(wn_data, encoding="utf-8")
+    except Exception as e:
+        logging.error(f"Error saving webauthn to local JSON: {e}")
 
 @app.post("/webauthn/auth/begin")
 async def wn_auth_begin(request: Request):
@@ -756,7 +778,7 @@ async def wn_auth_complete(request: Request, response: Response):
 
     # Actualizar sign count
     cred_data["sign_count"] = verification.new_sign_count
-    supabase.table("settings").upsert({"key": "webauthn_credential", "value": json.dumps(cred_data)}).execute()
+    _save_webauthn(json.dumps(cred_data))
     _wn_challenge.clear()
 
     # Crear sesión JWT
@@ -779,6 +801,12 @@ async def wn_delete(braimar_session: Optional[str] = Cookie(default=None)):
         supabase.table("settings").delete().eq("key", "webauthn_credential").execute()
     except Exception as e:
         logging.error(f"Error deleting webauthn from Supabase: {e}")
+    try:
+        path = Path(__file__).parent / "webauthn.json"
+        if path.exists():
+            path.unlink()
+    except Exception as e:
+        logging.error(f"Error deleting local webauthn file: {e}")
 
 
 @app.post("/enviar-recibo")
