@@ -2352,7 +2352,7 @@ export default function App() {
 
 const KeypadButton = ({ num, letters, onClick }: { num: string; letters: string; onClick: () => void }) => (
   <button onClick={onClick}
-    className="relative flex flex-col items-center justify-center w-[75px] h-[75px] rounded-full bg-white/75 backdrop-blur-md border border-[#e3e3e3]/60 transition-all duration-500 ease-out active:duration-75 active:scale-[0.92] active:bg-[#c2e7ff] active:border-[#a0d2f6] focus:outline-none shadow-sm"
+    className="ios-keypad-btn focus:outline-none select-none touch-manipulation"
     aria-label={`Digit ${num}`}>
     <span className={`text-[32px] font-light text-[#1f1f1f] leading-none tracking-tight ${letters ? 'mt-[-1px]' : 'mt-[1px]'}`}>
       {num}

@@ -450,6 +450,38 @@ html, body {
   opacity: 0.8 !important;
 }
 
+/* ── iOS Frosted Glass Keypad Buttons ── */
+.ios-keypad-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 75px;
+  height: 75px;
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, 0.42) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.02) !important;
+  
+  /* Asymmetric transition: cushiony release */
+  transition: background-color 380ms cubic-bezier(0.16, 1, 0.3, 1), 
+              transform 380ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 380ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.ios-keypad-btn:active {
+  /* Asymmetric transition: snap-in click response (instantaneous) */
+  background-color: rgba(255, 255, 255, 0.85) !important;
+  border-color: rgba(255, 255, 255, 0.7) !important;
+  transform: scale(0.92) !important;
+  transition: background-color 20ms linear, 
+              transform 20ms linear,
+              border-color 20ms linear !important;
+}
+
 /* ──────────────────────────────────────────────────────────────────────────────
    END OF DESIGN SYSTEM OVERRIDES
    ────────────────────────────────────────────────────────────────────────────── */
