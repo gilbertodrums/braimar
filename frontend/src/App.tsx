@@ -2244,12 +2244,12 @@ export default function App() {
   // ── PANEL (scroll natural del navegador) ──
   if (checkingSession) {
     return (
-      <div className="min-h-[100dvh] flex items-center justify-center bg-[#1a0533]">
+      <div className="min-h-[100dvh] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-2 border-purple-500/30 border-t-purple-400 rounded-full animate-spin" />
+          <div className="w-10 h-10 border-2 border-[#0b57d0]/20 border-t-[#0b57d0] rounded-full animate-spin" />
           <div className="flex flex-col items-center gap-1">
-            <p className="text-white/60 text-xs tracking-widest uppercase">Conectando...</p>
-            <p className="text-white/30 text-[10px]">Iniciando servidor, un momento...</p>
+            <p className="text-[#1f1f1f] text-xs tracking-widest uppercase font-semibold">Conectando...</p>
+            <p className="text-[#5f6368] text-[10px] font-medium">Iniciando servidor, un momento...</p>
           </div>
         </div>
       </div>
@@ -2259,7 +2259,7 @@ export default function App() {
 
   if (isAuthenticated) {
     return (
-      <div className="min-h-[100dvh] font-sans select-none">
+      <div className="min-h-[100dvh] font-sans select-none gemini-light-theme">
         <BcvBadge display={bcvDisplay} />
         <AdminPanel
           onLogout={() => setIsAuthenticated(false)}
@@ -2306,12 +2306,12 @@ export default function App() {
       <div className="bg-watermark" />
       <BcvBadge display={bcvDisplay} />
       <div className="relative z-10 flex flex-col items-center w-full px-4">
-        <h1 className="text-[15px] font-normal text-white/80 mb-6 tracking-wide">Ingresa tu contraseña</h1>
+        <h1 className="text-[17px] font-light text-[#1f1f1f] mb-6 tracking-wide Outfit-font-heading">Ingresa tu contraseña</h1>
 
         <div className={`flex items-center justify-center gap-[15px] mb-[42px] ${isError ? 'animate-shake' : ''}`}>
           {Array.from({ length: MAX_LENGTH }).map((_, i) => (
             <div key={i} className={`w-[9px] h-[9px] rounded-full transition-colors duration-150 ease-out ${
-              i < passcode.length ? 'bg-white border-[1.5px] border-white animate-pop' : 'bg-transparent border-[1.5px] border-white/50'
+              i < passcode.length ? 'bg-[#0b57d0] border-[1.5px] border-[#0b57d0] animate-pop' : 'bg-transparent border-[1.5px] border-[#c4c7c5]'
             }`} />
           ))}
         </div>
@@ -2325,7 +2325,7 @@ export default function App() {
           </div>
           <div className="col-start-3 flex items-center justify-center">
             <button onClick={() => setPasscode(p => p.slice(0, -1))}
-              className="w-[54px] h-[54px] rounded-full flex items-center justify-center text-white/50 hover:text-white active:scale-[0.92] transition-all duration-150 focus:outline-none"
+              className="w-[54px] h-[54px] rounded-full flex items-center justify-center text-[#5f6368] hover:text-[#1f1f1f] active:scale-[0.92] transition-all duration-150 focus:outline-none"
               aria-label="Borrar">
               <Delete size={18} />
             </button>
@@ -2336,12 +2336,12 @@ export default function App() {
         {biometriaHabilitada && webauthnSoportado && (
           <div className="flex flex-col items-center mt-10 gap-2">
             <button onClick={loginBiometria} disabled={biometriaCargando}
-              className="flex flex-col items-center gap-1.5 text-white/50 hover:text-white disabled:opacity-40 transition-colors active:scale-95">
+              className="flex flex-col items-center gap-1.5 text-[#0b57d0] hover:text-[#0842a0] disabled:opacity-40 transition-colors active:scale-95">
               <Fingerprint size={36} strokeWidth={1.2} />
-              <span className="text-[11px]">{biometriaCargando ? 'Verificando…' : 'Usar biometría'}</span>
+              <span className="text-[11px] font-medium">{biometriaCargando ? 'Verificando…' : 'Usar biometría'}</span>
             </button>
             {biometriaError && (
-              <p className="text-red-300 text-[10px] mt-1">{biometriaError}</p>
+              <p className="text-red-600 text-[10px] mt-1 bg-red-50 border border-red-100 rounded-full px-3 py-1">{biometriaError}</p>
             )}
           </div>
         )}
@@ -2352,12 +2352,12 @@ export default function App() {
 
 const KeypadButton = ({ num, letters, onClick }: { num: string; letters: string; onClick: () => void }) => (
   <button onClick={onClick}
-    className="relative flex flex-col items-center justify-center w-[54px] h-[54px] rounded-full bg-white/15 backdrop-blur-md border border-white/20 transition-all duration-500 ease-out active:duration-75 active:scale-[0.92] active:bg-white/30 focus:outline-none"
+    className="relative flex flex-col items-center justify-center w-[54px] h-[54px] rounded-full bg-white/75 backdrop-blur-md border border-[#e3e3e3]/60 transition-all duration-500 ease-out active:duration-75 active:scale-[0.92] active:bg-[#c2e7ff] active:border-[#a0d2f6] focus:outline-none shadow-sm"
     aria-label={`Digit ${num}`}>
-    <span className={`text-[27px] font-light text-white leading-none tracking-tight ${letters ? 'mt-[-3px]' : 'mt-[1px]'}`}>
+    <span className={`text-[27px] font-light text-[#1f1f1f] leading-none tracking-tight ${letters ? 'mt-[-3px]' : 'mt-[1px]'}`}>
       {num}
     </span>
-    {letters && <span className="text-[7px] font-bold text-white/60 uppercase tracking-[0.2em] mt-[2px] ml-[1px]">{letters}</span>}
+    {letters && <span className="text-[7px] font-bold text-[#5f6368] uppercase tracking-[0.2em] mt-[2px] ml-[1px]">{letters}</span>}
   </button>
 );
 
