@@ -236,6 +236,11 @@ html, body {
   transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
+/* Si el input tiene un icono (clase pl-8 en App.tsx), aumentamos el padding izquierdo para evitar colisiones */
+.gemini-light-theme input.pl-8 {
+  padding-left: 36px !important;
+}
+
 .gemini-light-theme input:focus,
 .gemini-light-theme select:focus {
   border-color: var(--color-primary) !important;
