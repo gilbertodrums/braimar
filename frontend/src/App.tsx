@@ -2306,17 +2306,17 @@ export default function App() {
       <div className="bg-watermark" />
       <BcvBadge display={bcvDisplay} />
       <div className="relative z-10 flex flex-col items-center w-full px-4">
-        <h1 className="text-[17px] font-light text-[#1f1f1f] mb-6 tracking-wide Outfit-font-heading">Ingresa tu contraseña</h1>
+        <h1 className="text-[20px] font-light text-[#1f1f1f] mb-8 tracking-wide Outfit-font-heading">Ingresa tu contraseña</h1>
 
-        <div className={`flex items-center justify-center gap-[15px] mb-[42px] ${isError ? 'animate-shake' : ''}`}>
+        <div className={`flex items-center justify-center gap-[18px] mb-[48px] ${isError ? 'animate-shake' : ''}`}>
           {Array.from({ length: MAX_LENGTH }).map((_, i) => (
-            <div key={i} className={`w-[9px] h-[9px] rounded-full transition-colors duration-150 ease-out ${
+            <div key={i} className={`w-[11px] h-[11px] rounded-full transition-colors duration-150 ease-out ${
               i < passcode.length ? 'bg-[#0b57d0] border-[1.5px] border-[#0b57d0] animate-pop' : 'bg-transparent border-[1.5px] border-[#c4c7c5]'
             }`} />
           ))}
         </div>
 
-        <div className="grid grid-cols-3 gap-x-[18px] gap-y-[13px]">
+        <div className="grid grid-cols-3 gap-x-[24px] gap-y-[16px]">
           {keyPadData.map(item => (
             <KeypadButton key={item.num} num={item.num} letters={item.letters} onClick={() => handleKeyPress(item.num)} />
           ))}
@@ -2325,23 +2325,23 @@ export default function App() {
           </div>
           <div className="col-start-3 flex items-center justify-center">
             <button onClick={() => setPasscode(p => p.slice(0, -1))}
-              className="w-[54px] h-[54px] rounded-full flex items-center justify-center text-[#5f6368] hover:text-[#1f1f1f] active:scale-[0.92] transition-all duration-150 focus:outline-none"
+              className="w-[75px] h-[75px] rounded-full flex items-center justify-center text-[#5f6368] hover:text-[#1f1f1f] active:scale-[0.92] transition-all duration-150 focus:outline-none"
               aria-label="Borrar">
-              <Delete size={18} />
+              <Delete size={20} />
             </button>
           </div>
         </div>
 
         {/* Botón de biometría */}
         {biometriaHabilitada && webauthnSoportado && (
-          <div className="flex flex-col items-center mt-10 gap-2">
+          <div className="flex flex-col items-center mt-12 gap-2.5">
             <button onClick={loginBiometria} disabled={biometriaCargando}
               className="flex flex-col items-center gap-1.5 text-[#0b57d0] hover:text-[#0842a0] disabled:opacity-40 transition-colors active:scale-95">
-              <Fingerprint size={36} strokeWidth={1.2} />
-              <span className="text-[11px] font-medium">{biometriaCargando ? 'Verificando…' : 'Usar biometría'}</span>
+              <Fingerprint size={42} strokeWidth={1.2} />
+              <span className="text-[12px] font-semibold">{biometriaCargando ? 'Verificando…' : 'Usar biometría'}</span>
             </button>
             {biometriaError && (
-              <p className="text-red-600 text-[10px] mt-1 bg-red-50 border border-red-100 rounded-full px-3 py-1">{biometriaError}</p>
+              <p className="text-red-600 text-[10.5px] mt-1 bg-red-50 border border-red-100 rounded-full px-3.5 py-1">{biometriaError}</p>
             )}
           </div>
         )}
@@ -2352,12 +2352,12 @@ export default function App() {
 
 const KeypadButton = ({ num, letters, onClick }: { num: string; letters: string; onClick: () => void }) => (
   <button onClick={onClick}
-    className="relative flex flex-col items-center justify-center w-[54px] h-[54px] rounded-full bg-white/75 backdrop-blur-md border border-[#e3e3e3]/60 transition-all duration-500 ease-out active:duration-75 active:scale-[0.92] active:bg-[#c2e7ff] active:border-[#a0d2f6] focus:outline-none shadow-sm"
+    className="relative flex flex-col items-center justify-center w-[75px] h-[75px] rounded-full bg-white/75 backdrop-blur-md border border-[#e3e3e3]/60 transition-all duration-500 ease-out active:duration-75 active:scale-[0.92] active:bg-[#c2e7ff] active:border-[#a0d2f6] focus:outline-none shadow-sm"
     aria-label={`Digit ${num}`}>
-    <span className={`text-[27px] font-light text-[#1f1f1f] leading-none tracking-tight ${letters ? 'mt-[-3px]' : 'mt-[1px]'}`}>
+    <span className={`text-[32px] font-light text-[#1f1f1f] leading-none tracking-tight ${letters ? 'mt-[-1px]' : 'mt-[1px]'}`}>
       {num}
     </span>
-    {letters && <span className="text-[7px] font-bold text-[#5f6368] uppercase tracking-[0.2em] mt-[2px] ml-[1px]">{letters}</span>}
+    {letters && <span className="text-[9px] font-bold text-[#5f6368] uppercase tracking-[0.2em] mt-[3px] ml-[1px]">{letters}</span>}
   </button>
 );
 

@@ -56,12 +56,84 @@ html, body {
   font-family: var(--font-primary);
 }
 
-/* ──────────────────────────────────────────────────────────────────────────────
-   GEMINI & MATERIAL DESIGN 3 LIGHT THEME OVERRIDES FOR AUTHENTICATED PANEL
-   ────────────────────────────────────────────────────────────────────────────── */
-
 .gemini-light-theme {
   color: var(--color-on-surface) !important;
+}
+
+/* ── Global Font Size & Hierarchy Overrides for Better Mobile Readability ── */
+.gemini-light-theme .text-\[9px\] {
+  font-size: 11px !important;
+}
+
+.gemini-light-theme .text-\[10px\] {
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+}
+
+.gemini-light-theme .text-\[11px\] {
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+}
+
+.gemini-light-theme .text-\[12px\] {
+  font-size: 14.5px !important;
+}
+
+.gemini-light-theme .text-xs {
+  font-size: 14px !important;
+}
+
+.gemini-light-theme .text-sm {
+  font-size: 15.5px !important;
+}
+
+.gemini-light-theme .text-base {
+  font-size: 17.5px !important;
+}
+
+.gemini-light-theme .text-lg {
+  font-size: 20px !important;
+}
+
+.gemini-light-theme .text-xl {
+  font-size: 25px !important;
+}
+
+/* Adjust SectionCard typography specifically to make group titles pop elegantly */
+.gemini-light-theme .px-4.py-2\.5.border-b.border-white\/10 p {
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em !important;
+  color: var(--color-on-surface-variant) !important;
+}
+
+/* Make list button items larger and more readable */
+.gemini-light-theme button span.text-\[11px\] {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: var(--color-on-surface) !important;
+}
+
+/* Colaboradores card name and details adjustments */
+.gemini-light-theme span.text-white.font-medium.text-\[12px\] {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: var(--color-on-surface) !important;
+}
+
+.gemini-light-theme span.text-white\/40.text-\[10px\] {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: var(--color-on-surface-variant) !important;
+}
+
+/* Adjust form input labels specifically */
+.gemini-light-theme label.text-white\/50.text-\[10px\] {
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  color: var(--color-on-surface-variant) !important;
+  margin-bottom: 3px !important;
+  display: inline-block !important;
 }
 
 /* ── Typography & Headings ── */
@@ -101,7 +173,7 @@ html, body {
 }
 
 .gemini-light-theme .text-white\/20 {
-  color: rgba(31, 31, 31, 0.2) !important;
+  color: rgba(31, 31, 31, 0.15) !important;
 }
 
 /* ── Cards & Containers (Tonal Surfaces) ── */
