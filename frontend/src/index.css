@@ -3,23 +3,23 @@
 
 :root {
   --font-primary: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
-  --color-background: #fdfdfc;
-  --color-canvas-blue: #f0f4f9;
-  --color-surface: #ffffff;
-  --color-on-surface: #1f1f1f;
-  --color-on-surface-variant: #5f6368;
-  --color-primary: #0b57d0;
-  --color-primary-hover: #0842a0;
-  --color-secondary-container: #c2e7ff;
-  --color-on-secondary: #004a77;
-  --color-outline-variant: #e3e3e3;
+  --color-background: #031644;
+  --color-canvas-blue: linear-gradient(135deg, #094be4 0%, #031644 100%);
+  --color-surface: rgba(255, 255, 255, 0.08); /* Frosted glass */
+  --color-on-surface: #ffffff; /* Crisp white main text */
+  --color-on-surface-variant: rgba(255, 255, 255, 0.65); /* Soft secondary text / ice blue */
+  --color-primary: #ffffff; /* Contrast actions */
+  --color-primary-hover: rgba(255, 255, 255, 0.9);
+  --color-secondary-container: rgba(255, 255, 255, 0.12);
+  --color-on-secondary: #ffffff;
+  --color-outline-variant: rgba(255, 255, 255, 0.15); /* Thin glass borders */
   
   --radius-pill: 9999px;
   --radius-large: 28px;
   --radius-medium: 18px;
   --radius-small: 12px;
   
-  --shadow-card: 0px 4px 12px -2px rgba(0, 0, 0, 0.05), 0px 2px 6px -1px rgba(0, 0, 0, 0.02);
+  --shadow-card: 0px 8px 32px 0 rgba(0, 0, 0, 0.25);
 }
 
 html, body {
@@ -28,7 +28,7 @@ html, body {
   width: 100%;
   min-height: 100%;
   font-family: var(--font-primary);
-  background: linear-gradient(180deg, #f0f4f9 0%, #dff0ff 100%);
+  background: linear-gradient(135deg, #094be4 0%, #031644 100%);
   background-attachment: fixed;
   color: var(--color-on-surface);
 }
@@ -45,8 +45,8 @@ html, body {
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-  opacity: 0.065; /* Fades elegantly on the light blue background */
-  filter: blur(1.2px) grayscale(100%) contrast(85%) brightness(95%);
+  opacity: 0.045; /* Fades elegantly on the dark blue gradient */
+  filter: blur(0.5px);
   pointer-events: none;
   z-index: 1;
 }
@@ -56,51 +56,51 @@ html, body {
   font-family: var(--font-primary);
 }
 
-.gemini-light-theme {
+.gemini-royal-theme {
   color: var(--color-on-surface) !important;
 }
 
 /* ── Global Font Size & Hierarchy Overrides for Better Mobile Readability ── */
-.gemini-light-theme .text-\[9px\] {
+.gemini-royal-theme .text-\[9px\] {
   font-size: 11px !important;
 }
 
-.gemini-light-theme .text-\[10px\] {
+.gemini-royal-theme .text-\[10px\] {
   font-size: 12.5px !important;
   font-weight: 500 !important;
 }
 
-.gemini-light-theme .text-\[11px\] {
+.gemini-royal-theme .text-\[11px\] {
   font-size: 13.5px !important;
   font-weight: 500 !important;
 }
 
-.gemini-light-theme .text-\[12px\] {
+.gemini-royal-theme .text-\[12px\] {
   font-size: 14.5px !important;
 }
 
-.gemini-light-theme .text-xs {
+.gemini-royal-theme .text-xs {
   font-size: 14px !important;
 }
 
-.gemini-light-theme .text-sm {
+.gemini-royal-theme .text-sm {
   font-size: 15.5px !important;
 }
 
-.gemini-light-theme .text-base {
+.gemini-royal-theme .text-base {
   font-size: 17.5px !important;
 }
 
-.gemini-light-theme .text-lg {
+.gemini-royal-theme .text-lg {
   font-size: 20px !important;
 }
 
-.gemini-light-theme .text-xl {
+.gemini-royal-theme .text-xl {
   font-size: 25px !important;
 }
 
 /* Adjust SectionCard typography specifically to make group titles pop elegantly */
-.gemini-light-theme .px-4.py-2\.5.border-b.border-white\/10 p {
+.gemini-royal-theme .px-4.py-2\.5.border-b.border-white\/10 p {
   font-size: 11.5px !important;
   font-weight: 700 !important;
   letter-spacing: 0.05em !important;
@@ -108,37 +108,39 @@ html, body {
 }
 
 /* Make list button items larger and more readable */
-.gemini-light-theme button span.text-\[11px\] {
+.gemini-royal-theme button span.text-\[11px\] {
   font-size: 14px !important;
   font-weight: 500 !important;
   color: var(--color-on-surface) !important;
 }
 
 /* Colaboradores card name and details adjustments */
-.gemini-light-theme span.text-white.font-medium.text-\[12px\] {
+.gemini-royal-theme span.text-white.font-medium.text-\[12px\] {
   font-size: 15px !important;
   font-weight: 600 !important;
   color: var(--color-on-surface) !important;
 }
 
-.gemini-light-theme span.text-white\/40.text-\[10px\] {
+.gemini-royal-theme span.text-white\/40.text-\[10px\] {
   font-size: 12px !important;
   font-weight: 500 !important;
   color: var(--color-on-surface-variant) !important;
 }
 
-/* Adjust form input labels specifically */
-.gemini-light-theme label.text-white\/50.text-\[10px\] {
+/* Adjust form input labels specifically to render icons side-by-side with text */
+.gemini-royal-theme label.text-white\/50.text-\[10px\] {
   font-size: 12.5px !important;
   font-weight: 600 !important;
   color: var(--color-on-surface-variant) !important;
-  margin-bottom: 3px !important;
-  display: inline-block !important;
+  margin-bottom: 3.5px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4.5px !important;
 }
 
 /* ── Typography & Headings ── */
-.gemini-light-theme h1.text-xl,
-.gemini-light-theme h1.text-lg {
+.gemini-royal-theme h1.text-xl,
+.gemini-royal-theme h1.text-lg {
   font-family: var(--font-primary);
   font-weight: 300 !important; /* Elegant thin weight */
   font-size: 25px !important;
@@ -146,312 +148,380 @@ html, body {
   letter-spacing: -0.02em;
 }
 
-.gemini-light-theme p.text-white\/40,
-.gemini-light-theme label.text-white\/50,
-.gemini-light-theme span.text-white\/50,
-.gemini-light-theme span.text-white\/40,
-.gemini-light-theme p.text-white\/50 {
+.gemini-royal-theme p.text-white\/40,
+.gemini-royal-theme label.text-white\/50,
+.gemini-royal-theme span.text-white\/50,
+.gemini-royal-theme span.text-white\/40,
+.gemini-royal-theme p.text-white\/50 {
   color: var(--color-on-surface-variant) !important;
   font-weight: 500 !important;
 }
 
-.gemini-light-theme .text-white {
+.gemini-royal-theme .text-white {
   color: var(--color-on-surface) !important;
 }
 
-.gemini-light-theme .text-white\/80 {
+.gemini-royal-theme .text-white\/80 {
   color: var(--color-on-surface) !important;
   font-weight: 550 !important;
 }
 
-.gemini-light-theme .text-white\/70 {
+.gemini-royal-theme .text-white\/70 {
   color: var(--color-on-surface-variant) !important;
 }
 
-.gemini-light-theme .text-white\/30 {
-  color: rgba(31, 31, 31, 0.4) !important;
+.gemini-royal-theme .text-white\/30 {
+  color: rgba(255, 255, 255, 0.45) !important;
 }
 
-.gemini-light-theme .text-white\/20 {
-  color: rgba(31, 31, 31, 0.15) !important;
+.gemini-royal-theme .text-white\/20 {
+  color: rgba(255, 255, 255, 0.25) !important;
 }
 
-/* ── Cards & Containers (Tonal Surfaces) ── */
-.gemini-light-theme .bg-white\/10 {
-  background-color: var(--color-surface) !important;
-  border-color: var(--color-outline-variant) !important;
+/* ── Cards & Containers (Glass Surfaces) ── */
+.gemini-royal-theme .bg-white\/10 {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: var(--radius-large) !important; /* 28px extra rounded */
   box-shadow: var(--shadow-card) !important;
-  backdrop-filter: none !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
   color: var(--color-on-surface) !important;
 }
 
 /* Section Cards internal styling */
-.gemini-light-theme .rounded-xl {
+.gemini-royal-theme .rounded-xl {
   border-radius: var(--radius-large) !important;
 }
 
-.gemini-light-theme .border-b.border-white\/10 {
-  border-color: var(--color-outline-variant) !important;
-  background-color: #f8fafd !important; /* Beautiful M3 tonal container title background */
+.gemini-royal-theme .border-b.border-white\/10 {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  background-color: rgba(255, 255, 255, 0.04) !important; /* Elegant tonal dark glass container title */
 }
 
 /* List buttons hover & active animations */
-.gemini-light-theme button.hover\:bg-white\/10:hover {
-  background-color: var(--color-canvas-blue) !important;
+.gemini-royal-theme button.hover\:bg-white\/10:hover {
+  background-color: rgba(255, 255, 255, 0.12) !important;
 }
 
-.gemini-light-theme button.active\:bg-white\/15:active {
-  background-color: var(--color-secondary-container) !important;
-  color: var(--color-on-secondary) !important;
+.gemini-royal-theme button.active\:bg-white\/15:active {
+  background-color: rgba(255, 255, 255, 0.18) !important;
 }
 
-.gemini-light-theme .text-white\/30 {
+.gemini-royal-theme .text-white\/30 {
   color: var(--color-on-surface-variant) !important;
-  opacity: 0.6;
+  opacity: 0.8;
 }
 
 /* Cards of Colaboradores & detailed content */
-.gemini-light-theme .bg-white\/10.backdrop-blur-md {
+.gemini-royal-theme .bg-white\/10.backdrop-blur-md {
   border-radius: var(--radius-medium) !important; /* 18px rounded for item cards */
   padding: 16px !important;
 }
 
 /* ── Inputs & Select Fields ── */
-.gemini-light-theme input[type="text"],
-.gemini-light-theme input[type="date"],
-.gemini-light-theme input[type="time"],
-.gemini-light-theme input[type="password"],
-.gemini-light-theme select {
-  background-color: var(--color-surface) !important;
-  border: 1px solid var(--color-outline-variant) !important;
+.gemini-royal-theme input[type="text"],
+.gemini-royal-theme input[type="date"],
+.gemini-royal-theme input[type="time"],
+.gemini-royal-theme input[type="password"],
+.gemini-royal-theme select {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
   color: var(--color-on-surface) !important;
   border-radius: var(--radius-pill) !important; /* Circular pills */
   padding-left: 16px !important;
   padding-right: 16px !important;
   height: 44px !important;
-  font-size: 12px !important;
+  font-size: 13px !important;
   font-weight: 500 !important;
-  box-shadow: inset 0px 1px 2px rgba(0, 0, 0, 0.02) !important;
+  box-shadow: inset 0px 1px 2px rgba(0, 0, 0, 0.05) !important;
   transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 /* Si el input tiene un icono (clase pl-8 en App.tsx), aumentamos el padding izquierdo para evitar colisiones */
-.gemini-light-theme input.pl-8 {
+.gemini-royal-theme input.pl-8 {
   padding-left: 36px !important;
 }
 
-.gemini-light-theme input:focus,
-.gemini-light-theme select:focus {
-  border-color: var(--color-primary) !important;
-  box-shadow: 0 0 0 3px rgba(11, 87, 208, 0.15) !important;
+.gemini-royal-theme input:focus,
+.gemini-royal-theme select:focus {
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15) !important;
   outline: none !important;
 }
 
-.gemini-light-theme input::placeholder {
-  color: rgba(95, 99, 104, 0.4) !important;
+.gemini-royal-theme input::placeholder {
+  color: rgba(255, 255, 255, 0.4) !important;
 }
 
 /* ── Buttons (Primary & Secondary) ── */
-/* Primary Buttons (originally white in dark theme) */
-.gemini-light-theme button.bg-white {
-  background-color: var(--color-primary) !important;
+/* General bg-white buttons turn into beautiful Glassmorphic pills */
+.gemini-royal-theme button.bg-white {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
   color: #ffffff !important;
   border-radius: var(--radius-pill) !important;
   font-weight: 600 !important;
-  height: 44px !important;
-  font-size: 12px !important;
-  box-shadow: 0px 2px 6px rgba(11, 87, 208, 0.2) !important;
+  box-shadow: var(--shadow-card) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
   transition: all 200ms ease !important;
 }
 
-.gemini-light-theme button.bg-white:hover {
-  background-color: var(--color-primary-hover) !important;
-  box-shadow: 0px 4px 8px rgba(11, 87, 208, 0.3) !important;
+.gemini-royal-theme button.bg-white:hover {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.3) !important;
 }
 
-.gemini-light-theme button.bg-white:active {
+.gemini-royal-theme button.bg-white:active {
   transform: scale(0.97) !important;
 }
 
-/* Secondary / Cancel Buttons */
-.gemini-light-theme button.border-white\/20,
-.gemini-light-theme button.bg-white\/10 {
-  background-color: var(--color-surface) !important;
-  border: 1px solid var(--color-outline-variant) !important;
-  color: var(--color-on-surface-variant) !important;
+/* Primary Action Buttons — only force white when the button explicitly has bg-white */
+.gemini-royal-theme button.bg-white.w-full {
+  background-color: #ffffff !important;
+  border: none !important;
+  color: #031644 !important;
+  border-radius: var(--radius-pill) !important;
+  font-weight: 700 !important;
+  height: 46px !important;
+  font-size: 13px !important;
+  box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.2) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.gemini-royal-theme button.bg-white.w-full:hover {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.25) !important;
+  color: #031644 !important;
+}
+
+.gemini-royal-theme button.bg-white.w-full:active {
+  transform: scale(0.98) !important;
+}
+
+/* Login submit button — keeps full-pill white style for the PIN/password screen */
+.gemini-royal-theme form.login-form button[type="submit"] {
+  background-color: #ffffff !important;
+  border: none !important;
+  color: #031644 !important;
+  border-radius: var(--radius-pill) !important;
+  font-weight: 700 !important;
+  height: 46px !important;
+  font-size: 13px !important;
+  box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.2) !important;
+  transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Secondary / Cancel Buttons (full-size form buttons) */
+.gemini-royal-theme button.border-white\/20,
+.gemini-royal-theme button.bg-white\/10 {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: var(--color-on-surface) !important;
   border-radius: var(--radius-pill) !important;
   font-weight: 600 !important;
   height: 44px !important;
-  font-size: 12px !important;
+  font-size: 13px !important;
   box-shadow: var(--shadow-card) !important;
   transition: all 200ms ease !important;
 }
 
-.gemini-light-theme button.border-white\/20:hover,
-.gemini-light-theme button.bg-white\/10:hover {
-  background-color: #f5f5f5 !important;
-  color: var(--color-on-surface) !important;
+.gemini-royal-theme button.border-white\/20:hover,
+.gemini-royal-theme button.bg-white\/10:hover {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Small inline card buttons (Ver PDF, Eliminar, etc.) — override the full-size pill rules */
+.gemini-royal-theme button.rounded-lg {
+  border-radius: 8px !important;
+  height: auto !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+/* Red/danger inline buttons */
+.gemini-royal-theme button.bg-red-500\/15,
+.gemini-royal-theme button.bg-red-500\/20 {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+  border: 1px solid rgba(239, 68, 68, 0.25) !important;
+  color: rgb(252, 165, 165) !important;
+  border-radius: 8px !important;
+  height: auto !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+.gemini-royal-theme button.bg-red-500\/15:hover,
+.gemini-royal-theme button.bg-red-500\/20:hover {
+  background-color: rgba(239, 68, 68, 0.32) !important;
+  border-color: rgba(239, 68, 68, 0.45) !important;
+  color: rgb(254, 202, 202) !important;
 }
 
 /* ── Chips & Badges ── */
 /* Turno Completo */
-.gemini-light-theme .bg-blue-400\/20 {
-  background-color: var(--color-secondary-container) !important;
-  color: var(--color-on-secondary) !important;
-  border: 1px solid rgba(11, 87, 208, 0.15) !important;
+.gemini-royal-theme .bg-blue-400\/20 {
+  background-color: rgba(13, 82, 236, 0.25) !important;
+  color: #a2c4ff !important;
+  border: 1px solid rgba(13, 82, 236, 0.3) !important;
   border-radius: var(--radius-pill) !important;
   font-weight: 600 !important;
 }
 
 /* Medio Turno */
-.gemini-light-theme .bg-amber-400\/20 {
-  background-color: #ffe0b2 !important;
-  color: #e65100 !important;
-  border: 1px solid rgba(230, 81, 0, 0.15) !important;
+.gemini-royal-theme .bg-amber-400\/20 {
+  background-color: rgba(255, 179, 0, 0.2) !important;
+  color: #ffe082 !important;
+  border: 1px solid rgba(255, 179, 0, 0.3) !important;
   border-radius: var(--radius-pill) !important;
   font-weight: 600 !important;
 }
 
 /* Action icons (pencil, trash, etc.) */
-.gemini-light-theme button.text-white\/40 {
-  color: var(--color-on-surface-variant) !important;
+.gemini-royal-theme button.text-white\/40 {
+  color: rgba(255, 255, 255, 0.6) !important;
 }
 
-.gemini-light-theme button.text-white\/40:hover {
-  color: var(--color-primary) !important;
-  background-color: var(--color-canvas-blue) !important;
+.gemini-royal-theme button.text-white\/40:hover {
+  color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.12) !important;
 }
 
-.gemini-light-theme button.hover\:text-red-300:hover {
-  color: #d32f2f !important;
-  background-color: #ffebee !important;
+.gemini-royal-theme button.hover\:text-red-300:hover {
+  color: #ff8a80 !important;
+  background-color: rgba(211, 47, 47, 0.2) !important;
 }
 
 /* Delete / Cancel inline verification */
-.gemini-light-theme .border-t.border-white\/10 {
-  border-color: var(--color-outline-variant) !important;
+.gemini-royal-theme .border-t.border-white\/10 {
+  border-color: rgba(255, 255, 255, 0.12) !important;
 }
 
-.gemini-light-theme button.bg-red-500\/80 {
-  background-color: #d32f2f !important;
+.gemini-royal-theme button.bg-red-500\/80 {
+  background-color: rgba(211, 47, 47, 0.8) !important;
   color: #ffffff !important;
   border-radius: var(--radius-pill) !important;
   font-weight: 600 !important;
 }
 
-.gemini-light-theme button.bg-red-500\/80:hover {
-  background-color: #b71c1c !important;
+.gemini-royal-theme button.bg-red-500\/80:hover {
+  background-color: rgba(183, 28, 28, 0.9) !important;
 }
 
 /* ── Calendar Redesign ── */
 /* Weekday headers */
-.gemini-light-theme .grid-cols-7 span.text-white\/30 {
-  color: var(--color-on-surface-variant) !important;
+.gemini-royal-theme .grid-cols-7 span.text-white\/30 {
+  color: rgba(255, 255, 255, 0.4) !important;
   font-weight: 700 !important;
 }
 
 /* Selected calendar day */
-.gemini-light-theme button div.bg-white {
-  background-color: var(--color-primary) !important;
-  color: #ffffff !important;
+.gemini-royal-theme button div.bg-white {
+  background-color: #ffffff !important;
+  color: #031644 !important;
   font-weight: 700 !important;
 }
 
 /* Today calendar day */
-.gemini-light-theme button div.border-white\/40 {
-  border: 1.5px solid var(--color-primary) !important;
-  color: var(--color-primary) !important;
+.gemini-royal-theme button div.border-white\/40 {
+  border: 1.5px solid #ffffff !important;
+  color: #ffffff !important;
   font-weight: 700 !important;
 }
 
 /* Regular days */
-.gemini-light-theme button div.text-white\/80 {
-  color: var(--color-on-surface) !important;
+.gemini-royal-theme button div.text-white\/80 {
+  color: rgba(255, 255, 255, 0.85) !important;
 }
 
-.gemini-light-theme button div.text-white\/80:hover {
-  background-color: var(--color-canvas-blue) !important;
+.gemini-royal-theme button div.text-white\/80:hover {
+  background-color: rgba(255, 255, 255, 0.12) !important;
 }
 
 /* Indicator dots below days */
-.gemini-light-theme button span.bg-gray-800 {
+.gemini-royal-theme button span.bg-gray-800 {
+  background-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.gemini-royal-theme button span.bg-green-400 {
   background-color: #ffffff !important;
 }
 
-.gemini-light-theme button span.bg-green-400 {
-  background-color: var(--color-primary) !important;
-}
-
 /* ── Modals & Bottom Sheets (iOS / MD3 Style) ── */
-.gemini-light-theme .bg-black\/30 {
-  background-color: rgba(15, 23, 42, 0.4) !important;
+.gemini-royal-theme .bg-black\/30 {
+  background-color: rgba(3, 22, 68, 0.4) !important;
   backdrop-filter: blur(4px) !important;
 }
 
-.gemini-light-theme .bg-white\/20.backdrop-blur-xl {
-  background-color: rgba(255, 255, 255, 0.96) !important;
-  backdrop-filter: blur(25px) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.5) !important;
+.gemini-royal-theme .bg-white\/20.backdrop-blur-xl {
+  background-color: rgba(3, 22, 68, 0.85) !important;
+  backdrop-filter: blur(30px) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
   border-left: none !important;
   border-right: none !important;
   border-bottom: none !important;
   border-radius: 28px 28px 0 0 !important; /* Beautiful extra large rounded top corners */
-  box-shadow: 0px -6px 24px rgba(0, 0, 0, 0.06) !important;
-  color: var(--color-on-surface) !important;
+  box-shadow: 0px -8px 32px rgba(0, 0, 0, 0.25) !important;
+  color: #ffffff !important;
 }
 
-.gemini-light-theme .bg-white\/20.backdrop-blur-xl h2 {
-  color: var(--color-on-surface) !important;
+.gemini-royal-theme .bg-white\/20.backdrop-blur-xl h2 {
+  color: #ffffff !important;
   font-family: var(--font-primary);
   font-weight: 300 !important;
   font-size: 20px !important;
 }
 
-.gemini-light-theme .bg-white\/20.backdrop-blur-xl p {
-  color: var(--color-on-surface-variant) !important;
+.gemini-royal-theme .bg-white\/20.backdrop-blur-xl p {
+  color: rgba(255, 255, 255, 0.65) !important;
 }
 
 /* Center biometric icon container badge */
-.gemini-light-theme .bg-white\/20.backdrop-blur-xl .bg-white\/20 {
-  background-color: var(--color-secondary-container) !important;
-  color: var(--color-on-secondary) !important;
-  border: 1px solid rgba(11, 87, 208, 0.1) !important;
+.gemini-royal-theme .bg-white\/20.backdrop-blur-xl .bg-white\/20 {
+  background-color: rgba(255, 255, 255, 0.10) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: var(--radius-pill) !important;
 }
 
-.gemini-light-theme .bg-white\/20.backdrop-blur-xl svg {
-  color: var(--color-primary) !important;
+.gemini-royal-theme .bg-white\/20.backdrop-blur-xl svg {
+  color: #ffffff !important;
 }
 
 /* Modal cancel & confirmation button styling */
-.gemini-light-theme .bg-white\/20.backdrop-blur-xl button.border-white\/25 {
-  border-color: var(--color-outline-variant) !important;
-  color: var(--color-on-surface-variant) !important;
-  background-color: #f5f5f5 !important;
+.gemini-royal-theme .bg-white\/20.backdrop-blur-xl button.border-white\/25 {
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-.gemini-light-theme .bg-white\/20.backdrop-blur-xl button.border-white\/25:hover {
-  background-color: #e3e3e3 !important;
+.gemini-royal-theme .bg-white\/20.backdrop-blur-xl button.border-white\/25:hover {
+  background-color: rgba(255, 255, 255, 0.15) !important;
 }
 
 /* ── Error states in modal or pages ── */
-.gemini-light-theme .bg-red-500\/20 {
-  background-color: #ffebee !important;
-  border: 1px solid rgba(198, 40, 40, 0.15) !important;
-  color: #c62828 !important;
+.gemini-royal-theme .bg-red-500\/20 {
+  background-color: rgba(211, 47, 47, 0.2) !important;
+  border: 1px solid rgba(211, 47, 47, 0.3) !important;
+  color: #ff8a80 !important;
   border-radius: var(--radius-pill) !important;
   padding: 10px 16px !important;
   font-weight: 500 !important;
 }
 
-.gemini-light-theme .bg-red-500\/20 svg {
-  color: #c62828 !important;
+.gemini-royal-theme .bg-red-500\/20 svg {
+  color: #ff8a80 !important;
 }
 
 /* Lucide icons inside cards/menus color mapping */
-.gemini-light-theme svg.text-white\/40 {
-  color: var(--color-primary) !important;
+.gemini-royal-theme svg.text-white\/40 {
+  color: #ffffff !important;
   opacity: 0.8 !important;
 }
 
@@ -465,11 +535,11 @@ html, body {
   width: 75px;
   height: 75px;
   border-radius: 9999px;
-  background-color: rgba(255, 255, 255, 0.42) !important;
+  background-color: rgba(255, 255, 255, 0.08) !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.35) !important;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.02) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1) !important;
   
   /* Asymmetric transition: cushiony release */
   transition: background-color 380ms cubic-bezier(0.16, 1, 0.3, 1), 
@@ -478,13 +548,244 @@ html, body {
 }
 
 .ios-keypad-btn:active {
-  /* Asymmetric transition: snap-in click response (instantaneous) */
-  background-color: rgba(255, 255, 255, 0.85) !important;
-  border-color: rgba(255, 255, 255, 0.7) !important;
-  transform: scale(0.92) !important;
-  transition: background-color 20ms linear, 
-              transform 20ms linear,
-              border-color 20ms linear !important;
+  /* Smooth active click transition */
+  background-color: rgba(255, 255, 255, 0.22) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  transform: scale(0.93) !important;
+  transition: background-color 180ms cubic-bezier(0.16, 1, 0.3, 1), 
+              transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 180ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.ios-keypad-btn span {
+  color: #ffffff !important;
+}
+
+.ios-keypad-btn span.text-\[9px\] {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* ── Corporate Grid Widget Overrides (Sewing Stitches & Vibrant Glowing Gradients) ── */
+.gemini-royal-theme .grid button {
+  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 300ms cubic-bezier(0.16, 1, 0.3, 1), 
+              background 300ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 300ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.gemini-royal-theme .grid button:hover {
+  transform: translateY(-5px) scale(1.02) !important;
+}
+
+.gemini-royal-theme .grid button:active {
+  transform: translateY(-1px) scale(0.96) !important;
+}
+
+/* Widget 1: Equipo (Cyan Stitch Glow) */
+.gemini-royal-theme .bg-\[\#e8f0fe\] {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.15) 0%, rgba(3, 22, 68, 0.45) 100%) !important;
+  border: 1.5px dashed rgba(0, 229, 255, 0.35) !important;
+  backdrop-filter: blur(25px) !important;
+  -webkit-backdrop-filter: blur(25px) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+}
+.gemini-royal-theme .bg-\[\#e8f0fe\]:hover {
+  border-color: rgba(0, 229, 255, 0.6) !important;
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.25), 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+}
+.gemini-royal-theme .bg-\[\#e8f0fe\] .bg-\[\#0b57d0\]\/10 {
+  background-color: rgba(0, 229, 255, 0.18) !important;
+}
+.gemini-royal-theme .bg-\[\#e8f0fe\] svg {
+  color: #00f0ff !important;
+  filter: drop-shadow(0 0 4px rgba(0, 240, 255, 0.4));
+}
+
+/* Widget 2: Generar Pago (Emerald Stitch Glow) */
+.gemini-royal-theme .bg-\[\#e6f4ea\] {
+  background: linear-gradient(135deg, rgba(0, 230, 118, 0.15) 0%, rgba(3, 22, 68, 0.45) 100%) !important;
+  border: 1.5px dashed rgba(0, 230, 118, 0.35) !important;
+  backdrop-filter: blur(25px) !important;
+  -webkit-backdrop-filter: blur(25px) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+}
+.gemini-royal-theme .bg-\[\#e6f4ea\]:hover {
+  border-color: rgba(0, 230, 118, 0.6) !important;
+  box-shadow: 0 0 20px rgba(0, 230, 118, 0.25), 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+}
+.gemini-royal-theme .bg-\[\#e6f4ea\] .bg-\[\#137333\]\/10 {
+  background-color: rgba(0, 230, 118, 0.18) !important;
+}
+.gemini-royal-theme .bg-\[\#e6f4ea\] svg {
+  color: #00e676 !important;
+  filter: drop-shadow(0 0 4px rgba(0, 230, 118, 0.4));
+}
+
+/* Widget 3: Horas Extras (Gold Stitch Glow) */
+.gemini-royal-theme .bg-\[\#fef7e0\] {
+  background: linear-gradient(135deg, rgba(255, 179, 0, 0.14) 0%, rgba(3, 22, 68, 0.45) 100%) !important;
+  border: 1.5px dashed rgba(255, 179, 0, 0.35) !important;
+  backdrop-filter: blur(25px) !important;
+  -webkit-backdrop-filter: blur(25px) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+}
+.gemini-royal-theme .bg-\[\#fef7e0\]:hover {
+  border-color: rgba(255, 179, 0, 0.6) !important;
+  box-shadow: 0 0 20px rgba(255, 179, 0, 0.25), 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+}
+.gemini-royal-theme .bg-\[\#fef7e0\] .bg-\[\#b06000\]\/10 {
+  background-color: rgba(255, 179, 0, 0.18) !important;
+}
+.gemini-royal-theme .bg-\[\#fef7e0\] svg {
+  color: #ffb300 !important;
+  filter: drop-shadow(0 0 4px rgba(255, 179, 0, 0.4));
+}
+
+/* Widget 4: Finanzas (Purple Stitch Glow) */
+.gemini-royal-theme .bg-\[\#f3e8fd\] {
+  background: linear-gradient(135deg, rgba(224, 64, 251, 0.14) 0%, rgba(3, 22, 68, 0.45) 100%) !important;
+  border: 1.5px dashed rgba(224, 64, 251, 0.35) !important;
+  backdrop-filter: blur(25px) !important;
+  -webkit-backdrop-filter: blur(25px) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+}
+.gemini-royal-theme .bg-\[\#f3e8fd\]:hover {
+  border-color: rgba(224, 64, 251, 0.6) !important;
+  box-shadow: 0 0 20px rgba(224, 64, 251, 0.25), 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+}
+.gemini-royal-theme .bg-\[\#f3e8fd\] .bg-\[\#7627bb\]\/10 {
+  background-color: rgba(224, 64, 251, 0.18) !important;
+}
+.gemini-royal-theme .bg-\[\#f3e8fd\] svg {
+  color: #e040fb !important;
+  filter: drop-shadow(0 0 4px rgba(224, 64, 251, 0.4));
+}
+
+/* Redefine dark-mode text classes globally within the theme for 100% legibility */
+.gemini-royal-theme .text-\[\#1f1f1f\] {
+  color: #ffffff !important;
+}
+
+.gemini-royal-theme .text-\[\#5f6368\] {
+  color: rgba(255, 255, 255, 0.65) !important;
+}
+
+.gemini-royal-theme svg.text-\[\#0b57d0\] {
+  color: #ffffff !important;
+}
+
+.gemini-royal-theme svg.text-gray-400 {
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.gemini-royal-theme div.bg-gray-100 {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.gemini-royal-theme svg.text-gray-600 {
+  color: #ffffff !important;
+}
+
+/* High Contrast hover/active transitions for back button and navigation elements */
+.gemini-royal-theme button.text-white\/50 {
+  color: rgba(255, 255, 255, 0.7) !important;
+  transition: all 150ms ease !important;
+}
+
+.gemini-royal-theme button.text-white\/50:hover {
+  color: #ffffff !important;
+  transform: translateX(-2px) !important;
+}
+
+/* Turn buttons: each has its own color identity — let Tailwind classes handle bg/border/text.
+   Only keep the override for the old bg-white/border-white/20 generic rules to not interfere. */
+.gemini-royal-theme button.bg-blue-600 {
+  background-color: rgb(37 99 235) !important;
+  border-color: rgb(59 130 246) !important;
+  color: #ffffff !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  height: auto !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
+}
+
+.gemini-royal-theme button.bg-blue-600:hover {
+  background-color: rgb(29 78 216) !important;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45) !important;
+}
+
+.gemini-royal-theme button.bg-amber-500 {
+  background-color: rgb(245 158 11) !important;
+  border-color: rgb(251 191 36) !important;
+  color: #ffffff !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  height: auto !important;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35) !important;
+}
+
+.gemini-royal-theme button.bg-amber-500:hover {
+  background-color: rgb(217 119 6) !important;
+  box-shadow: 0 6px 18px rgba(245, 158, 11, 0.45) !important;
+}
+
+/* Inactive tinted turn buttons — let Tailwind opacity classes render naturally */
+.gemini-royal-theme button.bg-blue-600\/15 {
+  background-color: rgba(37, 99, 235, 0.15) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+  color: rgba(147, 197, 253, 0.7) !important;
+  border-radius: 8px !important;
+  height: auto !important;
+  font-weight: 600 !important;
+}
+
+.gemini-royal-theme button.bg-amber-500\/15 {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+  border-color: rgba(251, 191, 36, 0.3) !important;
+  color: rgba(253, 230, 138, 0.7) !important;
+  border-radius: 8px !important;
+  height: auto !important;
+  font-weight: 600 !important;
+}
+
+/* Fix for the security button to ensure it uses beautiful translucent glass and does not clash */
+.gemini-royal-theme .security-btn {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-radius: var(--radius-pill) !important;
+  font-weight: 700 !important;
+  height: auto !important;
+  padding: 14px 20px !important;
+  box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.15) !important;
+  transition: all 200ms ease !important;
+}
+
+.gemini-royal-theme .security-btn:hover {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.25) !important;
+}
+
+.gemini-royal-theme .security-btn:active {
+  transform: scale(0.98) !important;
+}
+
+/* Style empty date inputs to display dd/mm/aaaa placeholder on mobile/desktop */
+.gemini-royal-theme input[type="date"] {
+  position: relative !important;
+}
+
+.gemini-royal-theme input[type="date"][data-empty="true"]::before {
+  content: attr(placeholder) !important;
+  color: rgba(255, 255, 255, 0.3) !important;
+  position: absolute !important;
+  left: 12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  pointer-events: none !important;
 }
 
 /* ──────────────────────────────────────────────────────────────────────────────

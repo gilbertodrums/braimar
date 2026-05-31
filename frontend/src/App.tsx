@@ -172,6 +172,8 @@ function ColaboradorForm({ inicial, onGuardar, onCancelar, bcvRate }: {
         <input type="date" value={form.fecha_ingreso}
           onChange={e => set('fecha_ingreso', e.target.value)}
           max={new Date().toISOString().split('T')[0]}
+          data-empty={!form.fecha_ingreso}
+          placeholder="dd/mm/aaaa"
           className="bg-white/10 border border-white/20 rounded-lg px-3 py-2.5 text-white text-[11px] focus:outline-none focus:border-white/50 focus:bg-white/15 transition-all duration-150 [color-scheme:dark]"
         />
       </div>
@@ -296,10 +298,14 @@ function ColaboradorForm({ inicial, onGuardar, onCancelar, bcvRate }: {
         <div className="grid grid-cols-2 gap-2">
           {(['completo', 'medio'] as const).map(t => (
             <button key={t} type="button" onClick={() => handleTurnoChange(t)}
-              className={`py-2.5 rounded-lg text-[11px] font-medium border transition-all duration-150 ${
-                form.tipo_turno === t
-                  ? 'bg-white text-gray-800 border-white shadow-sm'
-                  : 'bg-white/10 text-white/70 border-white/20 hover:bg-white/15'
+              className={`py-2.5 rounded-lg text-[11px] font-semibold border transition-all duration-200 ${
+                t === 'completo'
+                  ? form.tipo_turno === t
+                    ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/40 scale-[1.02]'
+                    : 'bg-blue-600/15 border-blue-500/30 text-blue-200/70 hover:bg-blue-600/25 hover:border-blue-400/50'
+                  : form.tipo_turno === t
+                    ? 'bg-amber-500 border-amber-400 text-white shadow-lg shadow-amber-900/40 scale-[1.02]'
+                    : 'bg-amber-500/15 border-amber-400/30 text-amber-200/70 hover:bg-amber-500/25 hover:border-amber-400/50'
               }`}>
               {t === 'completo' ? 'Turno completo' : 'Medio turno'}
             </button>
@@ -315,11 +321,11 @@ function ColaboradorForm({ inicial, onGuardar, onCancelar, bcvRate }: {
 
       <div className="flex gap-2 pt-1">
         <button type="button" onClick={onCancelar}
-          className="flex-1 py-2.5 rounded-xl text-[11px] font-medium border border-white/20 text-white/70 bg-white/10 hover:bg-white/15 transition-all">
+          className="flex-1 py-2.5 rounded-xl text-[11px] font-semibold border border-white/20 text-white/60 bg-white/8 hover:bg-white/15 hover:text-white/80 active:scale-[0.98] transition-all duration-150">
           Cancelar
         </button>
         <button type="submit" disabled={guardando}
-          className="flex-1 py-2.5 rounded-xl text-[11px] font-medium bg-white text-gray-800 disabled:opacity-40 hover:bg-white/90 active:scale-[0.98] transition-all">
+          className="flex-1 py-2.5 rounded-xl text-[11px] font-semibold bg-blue-600 hover:bg-blue-500 text-white border border-blue-500 shadow-md shadow-blue-900/40 disabled:opacity-40 active:scale-[0.98] transition-all duration-150">
           {guardando ? 'Guardando…' : inicial ? 'Guardar cambios' : 'Añadir'}
         </button>
       </div>
@@ -339,7 +345,7 @@ function FormInput({ label, value, onChange, placeholder, inputMode, icon, input
     <div className="flex flex-col gap-1">
       <label className="text-white/50 text-[10px] px-0.5">{label}</label>
       <div className="relative">
-        {icon && <span className="absolute left-3 top-1/2 -translate-y-1/2">{icon}</span>}
+        {icon && <span className="absolute left-3 top-1/2 -translate-y-1/2 z-10 pointer-events-none flex items-center justify-center">{icon}</span>}
         <input
           ref={inputRef}
           type="text" inputMode={inputMode} value={value}
@@ -362,12 +368,6 @@ function MisColaboradoresView({ onBack, onAbrirFormulario, colaboradores, onElim
 }) {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
-  const formatFecha = (iso: string) => {
-    if (!iso) return '';
-    const [y, m, d] = iso.split('-');
-    return `${d}/${m}/${y}`;
-  };
-
   return (
     <>
       <div className="pt-10 pb-4">
@@ -384,81 +384,135 @@ function MisColaboradoresView({ onBack, onAbrirFormulario, colaboradores, onElim
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 pb-16">
-        {cargando && <p className="text-white/50 text-[11px] text-center mt-8">Cargando...</p>}
-        {!cargando && colaboradores.length === 0 && (
-          <div className="flex flex-col items-center justify-center mt-10 gap-2 text-center">
-            <Users size={28} className="text-white/20" />
-            <p className="text-white/40 text-[11px]">No hay colaboradores aún.<br />Presiona Añadir para comenzar.</p>
-          </div>
-        )}
-        {colaboradores.map(c => (
-          <div key={c.id} className="bg-white/10 backdrop-blur-md border border-white/15 rounded-xl px-4 py-3">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-white font-medium text-[12px] truncate">{c.nombre} {c.apellido}</span>
-                  <span className={`shrink-0 text-[8px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${
-                    c.tipo_turno === 'completo'
-                      ? 'bg-blue-400/20 text-blue-200 border border-blue-400/30'
-                      : 'bg-amber-400/20 text-amber-200 border border-amber-400/30'
-                  }`}>
-                    {c.tipo_turno === 'completo' ? 'Completo' : 'Medio'}
-                  </span>
+      {cargando && (
+        <div className="flex flex-col gap-3 pb-16">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl px-5 py-4 animate-pulse">
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-2 flex-1">
+                  <div className="h-3 bg-white/15 rounded-full w-3/4" />
+                  <div className="h-2.5 bg-white/10 rounded-full w-1/2" />
                 </div>
-                <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-                  <span className="text-white/40 text-[10px] flex items-center gap-0.5"><IdCard size={9} />{c.cedula}</span>
-                  {c.telefono && <span className="text-white/40 text-[10px] flex items-center gap-0.5"><Phone size={9} />{c.telefono}</span>}
-                  {c.correo && <span className="text-white/40 text-[10px] flex items-center gap-0.5 break-all"><Mail size={9} />{c.correo}</span>}
-                  {c.fecha_ingreso && <span className="text-white/40 text-[10px] flex items-center gap-0.5"><Calendar size={9} />{formatFecha(c.fecha_ingreso)}</span>}
-                </div>
-                {/* Sueldo General */}
-                {(() => {
-                  const sueldoBase = c.sueldo || 0;
-                  const bonoAlim = c.bono_alimentacion ?? 40;
-                  const bonosVal = c.bonos ?? 120;
-                  const total = sueldoBase + bonoAlim + bonosVal;
-                  return (
-                    <div className="flex items-center gap-1.5 mt-1.5">
-                      <span className="text-white/50 text-[10px] flex items-center gap-0.5 font-medium min-w-[90px]">
-                        <Banknote size={9} /> Sueldo general:
-                      </span>
-                      <span className="text-white/80 text-[10px] font-semibold">
-                        $ {total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
-                      </span>
-                      {bcvRateForCard && (
-                        <>
-                          <span className="text-white/20 text-[9px]">·</span>
-                          <span className="text-white/60 text-[10px]">
-                            ≈ Bs. {(total * bcvRateForCard).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  );
-                })()}
-              </div>
-              <div className="flex items-center gap-0.5 shrink-0">
-                <button onClick={() => onEditar(c)} className="w-7 h-7 flex items-center justify-center rounded-full text-white/40 hover:text-white hover:bg-white/10 transition-all">
-                  <Pencil size={11} />
-                </button>
-                <button onClick={() => setConfirmDelete(c.id)} className="w-7 h-7 flex items-center justify-center rounded-full text-white/40 hover:text-red-300 hover:bg-red-400/15 transition-all">
-                  <Trash2 size={11} />
-                </button>
+                <div className="h-8 w-16 bg-white/10 rounded-xl" />
               </div>
             </div>
-            {confirmDelete === c.id && (
-              <div className="mt-2 pt-2 border-t border-white/10 flex items-center justify-between gap-2">
-                <span className="text-white/50 text-[10px]">¿Eliminar a {c.nombre}?</span>
-                <div className="flex gap-1.5">
-                  <button onClick={() => setConfirmDelete(null)} className="text-[9px] px-2.5 py-1 rounded-md border border-white/20 text-white/60 hover:bg-white/10 transition-all">Cancelar</button>
-                  <button onClick={() => { onEliminar(c.id); setConfirmDelete(null); }} className="text-[9px] px-2.5 py-1 rounded-md bg-red-500/80 text-white hover:bg-red-500 transition-all">Eliminar</button>
-                </div>
-              </div>
-            )}
+          ))}
+        </div>
+      )}
+
+      {!cargando && colaboradores.length === 0 && (
+        <div className="flex flex-col items-center justify-center mt-10 gap-3 text-center">
+          <div className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+            <Users size={24} className="text-white/25" />
           </div>
-        ))}
-      </div>
+          <p className="text-white/40 text-[11px] leading-relaxed">No hay colaboradores aún.<br />Presiona <span className="text-white/60 font-medium">+ Añadir</span> para comenzar.</p>
+        </div>
+      )}
+
+      {!cargando && (
+        <div className="flex flex-col gap-3 pb-20">
+          {colaboradores.map(c => {
+            const sueldoBase = c.sueldo || 0;
+            const bonoAlim = c.bono_alimentacion ?? 40;
+            const bonosVal = c.bonos ?? 120;
+            const total = sueldoBase + bonoAlim + bonosVal;
+            const totalBs = bcvRateForCard ? total * bcvRateForCard : null;
+
+            return (
+              <div key={c.id}
+                className="bg-white/10 backdrop-blur-md border border-white/15 rounded-xl overflow-hidden transition-all duration-200 hover:bg-white/[0.13] hover:border-white/25 hover:shadow-lg">
+
+                {/* Main row */}
+                <div className="flex items-stretch">
+
+                  {/* Left accent bar by shift type */}
+                  <div className={`w-[3px] shrink-0 ${
+                    c.tipo_turno === 'completo'
+                      ? 'bg-gradient-to-b from-blue-400/70 to-blue-600/50'
+                      : 'bg-gradient-to-b from-amber-400/70 to-amber-600/50'
+                  }`} />
+
+                  {/* Content */}
+                  <div className="flex-1 flex items-center justify-between gap-3 px-4 py-3">
+
+                    {/* Left: name, then badge on its own row, then cédula */}
+                    <div className="flex flex-col gap-1 flex-1 min-w-0">
+                      {/* Row 1: Name — full width, truncated */}
+                      <span className="text-white font-semibold text-[12.5px] leading-snug truncate">
+                        {c.nombre} {c.apellido}
+                      </span>
+
+                      {/* Row 2: Badge — ALWAYS fixed position, never inline with name */}
+                      <span className={`self-start text-[7.5px] font-bold uppercase tracking-widest px-2 py-[2px] rounded-full ${
+                        c.tipo_turno === 'completo'
+                          ? 'bg-blue-400/20 text-blue-200 border border-blue-400/30'
+                          : 'bg-amber-400/20 text-amber-200 border border-amber-400/30'
+                      }`}>
+                        {c.tipo_turno === 'completo' ? 'Turno completo' : 'Medio turno'}
+                      </span>
+
+                      {/* Row 3: Cédula + correo */}
+                      <div className="flex items-center gap-3 mt-0.5">
+                        <span className="text-white/35 text-[10px] flex items-center gap-1">
+                          <IdCard size={8} className="shrink-0" />
+                          {c.cedula}
+                        </span>
+                        {c.correo && (
+                          <span className="text-white/30 text-[10px] flex items-center gap-1 truncate max-w-[140px]">
+                            <Mail size={8} className="shrink-0" />
+                            {c.correo}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right: salary on top, actions on bottom */}
+                    <div className="flex flex-col items-end justify-between self-stretch py-0.5 shrink-0">
+                      <div className="text-right">
+                        <p className="text-white font-bold text-[13px] leading-tight tabular-nums">
+                          $ {total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
+                        {totalBs && (
+                          <p className="text-white/40 text-[9px] font-medium mt-0.5 tabular-nums">
+                            ≈ Bs. {totalBs.toLocaleString('es-VE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-0">
+                        <button onClick={() => onEditar(c)}
+                          className="w-6 h-6 flex items-center justify-center rounded-full text-white/30 hover:text-white hover:bg-white/10 transition-all active:scale-90">
+                          <Pencil size={10} />
+                        </button>
+                        <button onClick={() => setConfirmDelete(c.id)}
+                          className="w-6 h-6 flex items-center justify-center rounded-full text-white/30 hover:text-red-300 hover:bg-red-400/15 transition-all active:scale-90">
+                          <Trash2 size={10} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Confirm delete row */}
+                {confirmDelete === c.id && (
+                  <div className="border-t border-white/10 bg-red-500/5 px-4 py-2.5 flex items-center justify-between gap-2">
+                    <span className="text-white/55 text-[10px]">¿Eliminar a <span className="text-white/80 font-medium">{c.nombre}</span>?</span>
+                    <div className="flex gap-1.5">
+                      <button onClick={() => setConfirmDelete(null)}
+                        className="text-[9.5px] px-2.5 py-1.5 rounded-lg border border-white/20 text-white/60 hover:bg-white/10 transition-all">
+                        Cancelar
+                      </button>
+                      <button onClick={() => { onEliminar(c.id); setConfirmDelete(null); }}
+                        className="text-[9.5px] px-2.5 py-1.5 rounded-lg bg-red-500/80 text-white font-medium hover:bg-red-500 transition-all active:scale-95">
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </>
   );
 }
@@ -559,6 +613,21 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
     const totalSnap  = totalPagar;
 
     try {
+      // ── CARGAR LOGO ──────────────────────────────────────────────────────
+      let logoDataUrl: string | null = null;
+      try {
+        const logoResp = await fetch('/logo-horizontal-white.png');
+        if (logoResp.ok) {
+          const blob = await logoResp.blob();
+          logoDataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+        }
+      } catch { /* si falla, continúa sin logo */ }
+
       const doc    = new jsPDF({ unit: 'mm', format: 'a4' });
       const W      = doc.internal.pageSize.getWidth();   // 210
       const margin = 18;
@@ -569,18 +638,29 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
       doc.setFillColor(0, 97, 255);
       doc.roundedRect(0, 0, W, 44, 0, 0, 'F');
 
+      // Logo PNG transparente en esquina superior derecha — sin bordes ni diferencia de color
+      const logoW = 55;   // ancho en mm (logo horizontal ~3:1 ratio)
+      const logoH = 18;   // alto en mm
+      const logoX = W - logoW - 6;
+      const logoY = 13;   // centrado verticalmente en la cabecera de 44mm
+      if (logoDataUrl) {
+        doc.addImage(logoDataUrl, 'PNG', logoX, logoY, logoW, logoH);
+      }
+
+      // Texto centrado en el espacio a la izquierda del logo
+      const textAreaW = logoX - 4;
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(15);
-      doc.text('RECIBO DE PAGO', W / 2, 13, { align: 'center' });
+      doc.text('RECIBO DE PAGO', textAreaW / 2, 13, { align: 'center' });
 
       doc.setFontSize(11);
-      doc.text('LA CASA DEL ENCAJE', W / 2, 21, { align: 'center' });
+      doc.text('LA CASA DEL ENCAJE', textAreaW / 2, 21, { align: 'center' });
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8.5);
-      doc.text('RIF: V-08053912-2', W / 2, 29, { align: 'center' });
-      doc.text('Carrera 9 entre calles 20 y 21. Guanare, Edo Portuguesa.', W / 2, 35.5, { align: 'center' });
+      doc.text('RIF: V-08053912-2', textAreaW / 2, 29, { align: 'center' });
+      doc.text('Carrera 9 entre calles 20 y 21. Guanare, Edo Portuguesa.', textAreaW / 2, 35.5, { align: 'center' });
 
       // ── SECCIÓN: DATOS DEL COLABORADOR ────────────────────────────────
       let y = 54;
@@ -839,12 +919,14 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
             <div className="flex flex-col gap-1">
               <span className="text-white/30 text-[9px] px-0.5">Desde</span>
               <input type="date" value={desde} onChange={e => setDesde(e.target.value)}
+                data-empty={!desde} placeholder="dd/mm/aaaa"
                 className="bg-white/10 border border-white/20 rounded-lg px-3 py-2.5 text-white text-[11px] focus:outline-none focus:border-white/50 focus:bg-white/15 transition-all [color-scheme:dark]" />
             </div>
             <div className="flex flex-col gap-1">
               <span className="text-white/30 text-[9px] px-0.5">Hasta</span>
               <input type="date" value={hasta} onChange={e => setHasta(e.target.value)}
                 min={desde}
+                data-empty={!hasta} placeholder="dd/mm/aaaa"
                 className="bg-white/10 border border-white/20 rounded-lg px-3 py-2.5 text-white text-[11px] focus:outline-none focus:border-white/50 focus:bg-white/15 transition-all [color-scheme:dark]" />
             </div>
           </div>
@@ -1060,17 +1142,19 @@ function PagosRealizadosView({ onBack }: { onBack: () => void }) {
                 <button
                   onClick={() => verPDF(p)}
                   disabled={abriendo === p.id || eliminando === p.id}
-                  className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 border border-white/20 text-white text-[10px] font-medium px-3 py-1.5 rounded-lg transition-all disabled:opacity-40 active:scale-95">
+                  className="flex items-center gap-1.5 bg-white/12 hover:bg-white/22 border border-white/20 hover:border-white/30 text-white text-[10px] font-medium px-3 py-1.5 rounded-lg transition-all disabled:opacity-40 active:scale-95">
                   <FileDown size={11} />
-                  {abriendo === p.id ? '…' : 'Ver PDF'}
+                  {abriendo === p.id ? 'Abriendo…' : 'Ver PDF'}
                 </button>
                 <button
                   onClick={() => handleEliminarPago(p.id)}
                   disabled={eliminando === p.id}
-                  className="flex items-center justify-center bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 text-red-300 w-8 h-8 rounded-lg transition-all disabled:opacity-40 active:scale-95 animate-fade-in"
-                  title="Eliminar registro de pago"
-                >
-                  <Trash2 size={12} />
+                  className="flex items-center gap-1.5 bg-red-500/15 hover:bg-red-500/35 border border-red-500/25 hover:border-red-400/50 text-red-300 hover:text-red-200 text-[10px] font-medium px-3 py-1.5 rounded-lg transition-all disabled:opacity-40 active:scale-95"
+                  title="Eliminar registro de pago">
+                  {eliminando === p.id
+                    ? <><span className="w-[11px] h-[11px] border-2 border-red-300/40 border-t-red-300 rounded-full animate-spin" /></>
+                    : <Trash2 size={11} />}
+                  {eliminando === p.id ? 'Eliminando…' : 'Eliminar'}
                 </button>
               </div>
             </div>
@@ -1480,7 +1564,14 @@ function HorasExtrasView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
       </div>
 
       {/* ── PANEL DE ACUMULADOS POR QUINCENA ── */}
-      {colaboradores.length > 0 && (
+      {cargando ? (
+        <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 mb-4 flex flex-col justify-center items-center h-[142px] animate-pulse">
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            <span className="text-[10px] text-white/50 font-medium tracking-wider uppercase">Cargando resumen quincenal...</span>
+          </div>
+        </div>
+      ) : colaboradores.length > 0 ? (
         <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 mb-4 flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <span className="text-white/50 text-[9px] uppercase tracking-widest font-semibold">Resumen Quincenal ({formatFechaQuincena(qDesde)} al {formatFechaQuincena(qHasta)})</span>
@@ -1545,7 +1636,7 @@ function HorasExtrasView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
             );
           })()}
         </div>
-      )}
+      ) : null}
 
       {/* ── CALENDARIO MENSUAL ── */}
       <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 mb-4 select-none">
@@ -1613,7 +1704,11 @@ function HorasExtrasView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
           Registros del {selectedDate ? formatFechaDisplay(selectedDate) : ''}
         </p>
 
-        {cargando && <p className="text-white/50 text-[11px] text-center mt-4">Cargando...</p>}
+        {cargando && (
+          <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-xl px-4 py-3 h-[45px] flex items-center justify-center animate-pulse">
+            <span className="text-[10px] text-white/40 tracking-wider">Cargando registros...</span>
+          </div>
+        )}
 
         {!cargando && entriesForDay.length === 0 && (
           <div className="flex flex-col items-center justify-center p-8 bg-white/5 border border-white/10 rounded-2xl text-center">
@@ -1872,32 +1967,34 @@ function AdminPanel({ onLogout, bcvRate, biometriaHabilitada, onDesactivarBiomet
         <>
           <div className="pt-10 pb-4">
             <div className="flex justify-end mb-3">
-              <button onClick={onLogout} className="flex items-center gap-1 bg-white border border-[#e3e3e3] rounded-full px-3 py-1 shadow-sm text-gray-600 hover:text-gray-900 transition-colors text-[11px] font-semibold active:scale-95">
-                <LogOut size={12} className="text-[#0b57d0]" /> Cerrar sesión
+              <button onClick={onLogout} className="flex items-center gap-1 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full px-3.5 py-1.5 shadow-md text-white/90 hover:text-white transition-all text-[11px] font-bold active:scale-95 duration-150 backdrop-blur-md">
+                <LogOut size={12} className="text-white/80" /> Cerrar sesión
               </button>
             </div>
             <p className="text-white/40 text-[9px] uppercase tracking-widest mb-0.5">Panel de administrador</p>
             <h1 className="text-xl font-light text-white">Bienvenida Braimar</h1>
           </div>
 
-          {/* Seguridad / Contraseña Pill */}
+          {/* Seguridad / Contraseña Pill con estilo de vidrio esmerilado y alto contraste */}
           <div className="mb-5">
-            <button onClick={() => setView('change-pin')}
-              className="w-full flex items-center justify-between bg-white border border-[#e3e3e3]/80 rounded-full px-4 py-3 shadow-sm hover:bg-white active:scale-[0.98] transition-all text-[#1f1f1f] text-[12.5px] font-semibold select-none touch-manipulation">
+            <div role="button" tabIndex={0}
+              onClick={() => setView('change-pin')}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setView('change-pin'); } }}
+              className="security-btn w-full flex items-center justify-between bg-white/10 hover:bg-white/15 border border-white/20 rounded-full px-5 py-3.5 shadow-lg active:scale-[0.98] transition-all text-white text-[12.5px] font-bold select-none touch-manipulation backdrop-blur-md cursor-pointer outline-none">
               <span className="flex items-center gap-2">
-                <Shield size={14} className="text-[#0b57d0]" />
+                <Shield size={14} className="text-white/80" />
                 Seguridad: Cambiar contraseña
               </span>
               {biometriaHabilitada && (
                 <button type="button" onClick={(e) => { e.stopPropagation(); onDesactivarBiometria(); }}
-                  className="flex items-center gap-1 bg-[#ffebee] border border-red-100 rounded-full px-2.5 py-0.5 text-[9.5px] font-bold text-[#c62828] active:scale-95 transition-all">
-                  <Fingerprint size={10} /> Desactivar
+                  className="flex items-center gap-1 bg-[#ffebee]/20 border border-red-400/30 rounded-full px-2.5 py-0.5 text-[9.5px] font-bold text-red-200 active:scale-95 transition-all">
+                  <Fingerprint size={10} className="text-red-300" /> Desactivar
                 </button>
               )}
               {!biometriaHabilitada && (
-                <ChevronRight size={14} className="text-gray-400" />
+                <ChevronRight size={14} className="text-white/50" />
               )}
-            </button>
+            </div>
           </div>
 
           {/* Gestión Operativa (2x2 Grid) */}
@@ -1946,18 +2043,18 @@ function AdminPanel({ onLogout, bcvRate, biometriaHabilitada, onDesactivarBiomet
 
           </div>
 
-          {/* Historial (Ancho completo) */}
-          <p className="text-white/40 text-[10px] uppercase tracking-widest mb-2 px-1">Archivo histórico</p>
+          {/* Historial (Ancho completo con estilo vidrio, alto contraste y mayor espaciado) */}
+          <p className="text-white/40 text-[9.5px] uppercase tracking-[0.2em] font-semibold mt-14 mb-4 px-1">Archivo histórico</p>
           <button onClick={() => setView('pagos-realizados')}
-            className="w-full flex items-center gap-3.5 p-4 bg-white border border-[#e3e3e3]/80 rounded-[24px] shadow-sm active:scale-[0.98] transition-all select-none touch-manipulation text-left mb-16">
-            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-              <FileDown size={20} className="text-gray-600" />
+            className="w-full flex items-center gap-6 py-6 px-7 bg-white/10 hover:bg-white/15 border border-white/20 rounded-[24px] shadow-lg active:scale-[0.98] transition-all select-none touch-manipulation text-left mb-20 backdrop-blur-md">
+            <div className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+              <FileDown size={22} className="text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[14px] font-semibold text-[#1f1f1f]">Pagos Realizados</p>
-              <p className="text-[10.5px] text-[#5f6368] mt-0.5">Historial y eliminación de recibos</p>
+              <p className="text-[14.5px] font-bold text-white">Pagos Realizados</p>
+              <p className="text-[11.5px] text-white/60 mt-0.5">Historial y eliminación de recibos</p>
             </div>
-            <ChevronRight size={16} className="text-gray-400 shrink-0" />
+            <ChevronRight size={18} className="text-white/50 shrink-0" />
           </button>
         </>
       )}
@@ -2319,7 +2416,8 @@ export default function App() {
 
   if (isAuthenticated) {
     return (
-      <div className="min-h-[100dvh] font-sans select-none gemini-light-theme">
+      <div className="min-h-[100dvh] font-sans select-none gemini-royal-theme relative">
+        <div className="bg-watermark" />
         <BcvBadge display={bcvDisplay} />
         <AdminPanel
           onLogout={() => setIsAuthenticated(false)}
@@ -2362,16 +2460,22 @@ export default function App() {
 
   // ── LOGIN (centrado en pantalla) ──
   return (
-    <div className="h-[100dvh] font-sans select-none touch-manipulation flex flex-col items-center justify-center">
+    <div className="h-[100dvh] font-sans select-none touch-manipulation flex flex-col items-center justify-start pt-[5dvh]">
       <div className="bg-watermark" />
       <BcvBadge display={bcvDisplay} />
       <div className="relative z-10 flex flex-col items-center w-full px-4">
-        <h1 className="text-[20px] font-light text-[#1f1f1f] mb-8 tracking-wide Outfit-font-heading">Ingresa tu contraseña</h1>
+        
+        {/* Logotipo corporativo blanco horizontal sin contenedor */}
+        <div className="mb-6 flex flex-col items-center animate-fade-in w-full max-w-[280px]">
+          <img src="/logo-horizontal-white.png" alt="La Casa Del Encaje" className="h-[52px] object-contain" />
+        </div>
 
-        <div className={`flex items-center justify-center gap-[18px] mb-[48px] ${isError ? 'animate-shake' : ''}`}>
+        <h1 className="text-[13px] font-semibold text-white/70 mb-5 tracking-[0.2em] uppercase Outfit-font-heading">Ingresa tu contraseña</h1>
+
+        <div className={`flex items-center justify-center gap-[18px] mb-[40px] ${isError ? 'animate-shake' : ''}`}>
           {Array.from({ length: MAX_LENGTH }).map((_, i) => (
             <div key={i} className={`w-[11px] h-[11px] rounded-full transition-colors duration-150 ease-out ${
-              i < passcode.length ? 'bg-[#0b57d0] border-[1.5px] border-[#0b57d0] animate-pop' : 'bg-transparent border-[1.5px] border-[#c4c7c5]'
+              i < passcode.length ? 'bg-white border-[1.5px] border-white animate-pop' : 'bg-transparent border-[1.5px] border-white/35'
             }`} />
           ))}
         </div>
@@ -2385,7 +2489,7 @@ export default function App() {
           </div>
           <div className="col-start-3 flex items-center justify-center">
             <button onClick={() => setPasscode(p => p.slice(0, -1))}
-              className="w-[75px] h-[75px] rounded-full flex items-center justify-center text-[#5f6368] hover:text-[#1f1f1f] active:scale-[0.92] transition-all duration-150 focus:outline-none"
+              className="w-[75px] h-[75px] rounded-full flex items-center justify-center text-white/60 hover:text-white active:scale-[0.92] transition-all duration-150 focus:outline-none"
               aria-label="Borrar">
               <Delete size={20} />
             </button>
@@ -2394,14 +2498,14 @@ export default function App() {
 
         {/* Botón de biometría */}
         {biometriaHabilitada && webauthnSoportado && (
-          <div className="flex flex-col items-center mt-12 gap-2.5">
+          <div className="flex flex-col items-center mt-10 gap-2">
             <button onClick={loginBiometria} disabled={biometriaCargando}
-              className="flex flex-col items-center gap-1.5 text-[#0b57d0] hover:text-[#0842a0] disabled:opacity-40 transition-colors active:scale-95">
-              <Fingerprint size={42} strokeWidth={1.2} />
-              <span className="text-[12px] font-semibold">{biometriaCargando ? 'Verificando…' : 'Usar biometría'}</span>
+              className="flex flex-col items-center gap-1 text-white/70 hover:text-white disabled:opacity-40 transition-colors active:scale-95">
+              <Fingerprint size={40} strokeWidth={1.2} />
+              <span className="text-[11.5px] font-semibold tracking-wide">{biometriaCargando ? 'Verificando…' : 'Usar biometría'}</span>
             </button>
             {biometriaError && (
-              <p className="text-red-600 text-[10.5px] mt-1 bg-red-50 border border-red-100 rounded-full px-3.5 py-1">{biometriaError}</p>
+              <p className="text-red-300 text-[10.5px] mt-1.5 bg-red-500/20 border border-red-400/25 rounded-full px-4 py-1 text-center">{biometriaError}</p>
             )}
           </div>
         )}
