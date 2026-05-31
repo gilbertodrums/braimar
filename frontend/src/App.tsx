@@ -1870,35 +1870,95 @@ function AdminPanel({ onLogout, bcvRate, biometriaHabilitada, onDesactivarBiomet
       {/* ── MENÚ ── */}
       {view === 'menu' && (
         <>
-          <div className="pt-10 pb-6">
-            <div className="flex justify-end mb-4">
-              <button onClick={onLogout} className="flex items-center gap-1.5 text-white/50 hover:text-white transition-colors text-[11px]">
-                <LogOut size={12} /> Cerrar sesión
+          <div className="pt-10 pb-4">
+            <div className="flex justify-end mb-3">
+              <button onClick={onLogout} className="flex items-center gap-1 bg-white border border-[#e3e3e3] rounded-full px-3 py-1 shadow-sm text-gray-600 hover:text-gray-900 transition-colors text-[11px] font-semibold active:scale-95">
+                <LogOut size={12} className="text-[#0b57d0]" /> Cerrar sesión
               </button>
             </div>
-            <p className="text-white/40 text-[9px] uppercase tracking-widest mb-1">Panel de administrador</p>
+            <p className="text-white/40 text-[9px] uppercase tracking-widest mb-0.5">Panel de administrador</p>
             <h1 className="text-xl font-light text-white">Bienvenida Braimar</h1>
           </div>
-          <div className="flex flex-col gap-2 pb-16">
-            <SectionCard icon={<Shield size={10} className="text-white/40" />} titulo="Seguridad"
-              items={[
-                { label: 'Cambiar contraseña', onClick: () => setView('change-pin') },
-                ...(biometriaHabilitada ? [{
-                  label: 'Desactivar biometría',
-                  icon: <Fingerprint size={11} className="text-white/40" />,
-                  onClick: onDesactivarBiometria,
-                }] : []),
-              ]} />
-            <SectionCard icon={<CreditCard size={10} className="text-white/40" />} titulo="Pago a colaboradores"
-              items={[
-                { label: 'Mis colaboradores',  icon: <Users size={11} className="text-white/40" />,    onClick: () => { fetchColaboradores(); setView('mis-colaboradores'); } },
-                { label: 'Pagos realizados',   icon: <Banknote size={11} className="text-white/40" />, onClick: () => setView('pagos-realizados') },
-                { label: 'Generar pago',       icon: <CreditCard size={11} className="text-white/40" />, onClick: () => setView('generar-pago') },
-                { label: 'Control de finanzas', icon: <Banknote size={11} className="text-white/40" />,  onClick: () => setView('finanzas') },
-                { label: 'Horas extras',       icon: <Clock size={11} className="text-white/40" />,     onClick: () => setView('horas-extras') },
-              ]}
-            />
+
+          {/* Seguridad / Contraseña Pill */}
+          <div className="mb-5">
+            <button onClick={() => setView('change-pin')}
+              className="w-full flex items-center justify-between bg-white border border-[#e3e3e3]/80 rounded-full px-4 py-3 shadow-sm hover:bg-white active:scale-[0.98] transition-all text-[#1f1f1f] text-[12.5px] font-semibold select-none touch-manipulation">
+              <span className="flex items-center gap-2">
+                <Shield size={14} className="text-[#0b57d0]" />
+                Seguridad: Cambiar contraseña
+              </span>
+              {biometriaHabilitada && (
+                <button type="button" onClick={(e) => { e.stopPropagation(); onDesactivarBiometria(); }}
+                  className="flex items-center gap-1 bg-[#ffebee] border border-red-100 rounded-full px-2.5 py-0.5 text-[9.5px] font-bold text-[#c62828] active:scale-95 transition-all">
+                  <Fingerprint size={10} /> Desactivar
+                </button>
+              )}
+              {!biometriaHabilitada && (
+                <ChevronRight size={14} className="text-gray-400" />
+              )}
+            </button>
           </div>
+
+          {/* Gestión Operativa (2x2 Grid) */}
+          <p className="text-white/40 text-[10px] uppercase tracking-widest mb-2 px-1">Gestión operativa</p>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            
+            {/* Widget 1: Colaboradores */}
+            <button onClick={() => { fetchColaboradores(); setView('mis-colaboradores'); }}
+              className="flex flex-col items-start p-4 bg-[#e8f0fe] border border-blue-100 rounded-[24px] shadow-sm active:scale-95 transition-all select-none touch-manipulation text-left w-full">
+              <div className="w-9 h-9 rounded-full bg-[#0b57d0]/10 flex items-center justify-center mb-3">
+                <Users size={18} className="text-[#0b57d0]" />
+              </div>
+              <span className="text-[13.5px] font-semibold text-[#1f1f1f]">Equipo</span>
+              <span className="text-[10px] text-[#5f6368] mt-0.5">Mis colaboradores</span>
+            </button>
+
+            {/* Widget 2: Generar Pago */}
+            <button onClick={() => setView('generar-pago')}
+              className="flex flex-col items-start p-4 bg-[#e6f4ea] border border-green-100 rounded-[24px] shadow-sm active:scale-95 transition-all select-none touch-manipulation text-left w-full">
+              <div className="w-9 h-9 rounded-full bg-[#137333]/10 flex items-center justify-center mb-3">
+                <CreditCard size={18} className="text-[#137333]" />
+              </div>
+              <span className="text-[13.5px] font-semibold text-[#1f1f1f]">Generar Pago</span>
+              <span className="text-[10px] text-[#5f6368] mt-0.5">Crear recibo PDF</span>
+            </button>
+
+            {/* Widget 3: Horas Extras */}
+            <button onClick={() => setView('horas-extras')}
+              className="flex flex-col items-start p-4 bg-[#fef7e0] border border-yellow-100 rounded-[24px] shadow-sm active:scale-95 transition-all select-none touch-manipulation text-left w-full">
+              <div className="w-9 h-9 rounded-full bg-[#b06000]/10 flex items-center justify-center mb-3">
+                <Clock size={18} className="text-[#b06000]" />
+              </div>
+              <span className="text-[13.5px] font-semibold text-[#1f1f1f]">Horas Extras</span>
+              <span className="text-[10px] text-[#5f6368] mt-0.5">Control de tiempo</span>
+            </button>
+
+            {/* Widget 4: Finanzas */}
+            <button onClick={() => setView('finanzas')}
+              className="flex flex-col items-start p-4 bg-[#f3e8fd] border border-purple-100 rounded-[24px] shadow-sm active:scale-95 transition-all select-none touch-manipulation text-left w-full">
+              <div className="w-9 h-9 rounded-full bg-[#7627bb]/10 flex items-center justify-center mb-3">
+                <Banknote size={18} className="text-[#7627bb]" />
+              </div>
+              <span className="text-[13.5px] font-semibold text-[#1f1f1f]">Finanzas</span>
+              <span className="text-[10px] text-[#5f6368] mt-0.5">Balance quincenal</span>
+            </button>
+
+          </div>
+
+          {/* Historial (Ancho completo) */}
+          <p className="text-white/40 text-[10px] uppercase tracking-widest mb-2 px-1">Archivo histórico</p>
+          <button onClick={() => setView('pagos-realizados')}
+            className="w-full flex items-center gap-3.5 p-4 bg-white border border-[#e3e3e3]/80 rounded-[24px] shadow-sm active:scale-[0.98] transition-all select-none touch-manipulation text-left mb-16">
+            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+              <FileDown size={20} className="text-gray-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[14px] font-semibold text-[#1f1f1f]">Pagos Realizados</p>
+              <p className="text-[10.5px] text-[#5f6368] mt-0.5">Historial y eliminación de recibos</p>
+            </div>
+            <ChevronRight size={16} className="text-gray-400 shrink-0" />
+          </button>
         </>
       )}
 
@@ -1981,26 +2041,26 @@ function AdminPanel({ onLogout, bcvRate, biometriaHabilitada, onDesactivarBiomet
 }
 
 // ─── COMPONENTES AUXILIARES ───────────────────────────────────────────────────
-function SectionCard({ icon, titulo, items }: {
-  icon: React.ReactNode; titulo: string;
-  items: { label: string; icon?: React.ReactNode; onClick: () => void }[];
-}) {
-  return (
-    <div className="bg-white/10 backdrop-blur-md rounded-xl overflow-hidden border border-white/15">
-      <div className="px-4 py-2.5 border-b border-white/10 flex items-center gap-1.5">
-        {icon}
-        <p className="text-white/40 text-[9px] uppercase tracking-widest">{titulo}</p>
-      </div>
-      {items.map((item, i) => (
-        <button key={i} onClick={item.onClick}
-          className={`w-full flex items-center justify-between px-4 py-3 text-white hover:bg-white/10 active:bg-white/15 transition-colors ${i < items.length - 1 ? 'border-b border-white/10' : ''}`}>
-          <span className="flex items-center gap-2 text-[11px]">{item.icon}{item.label}</span>
-          <ChevronRight size={12} className="text-white/30" />
-        </button>
-      ))}
-    </div>
-  );
-}
+// function SectionCard({ icon, titulo, items }: {
+//   icon: React.ReactNode; titulo: string;
+//   items: { label: string; icon?: React.ReactNode; onClick: () => void }[];
+// }) {
+//   return (
+//     <div className="bg-white/10 backdrop-blur-md rounded-xl overflow-hidden border border-white/15">
+//       <div className="px-4 py-2.5 border-b border-white/10 flex items-center gap-1.5">
+//         {icon}
+//         <p className="text-white/40 text-[9px] uppercase tracking-widest">{titulo}</p>
+//       </div>
+//       {items.map((item, i) => (
+//         <button key={i} onClick={item.onClick}
+//           className={`w-full flex items-center justify-between px-4 py-3 text-white hover:bg-white/10 active:bg-white/15 transition-colors ${i < items.length - 1 ? 'border-b border-white/10' : ''}`}>
+//           <span className="flex items-center gap-2 text-[11px]">{item.icon}{item.label}</span>
+//           <ChevronRight size={12} className="text-white/30" />
+//         </button>
+//       ))}
+//     </div>
+//   );
+// }
 
 // function Placeholder({ texto }: { texto: string }) {
 //   return (
