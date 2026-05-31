@@ -660,7 +660,7 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
       addConcepto(`Bono de Alimentación Quincenal ($${bonoAlimQuincenalUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD)`, 'No salarial', formatBs(bonoAlimQuincenalBs));
       addConcepto(`Bonos Quincenal ($${bonosQuincenalUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD)`, 'No salarial', formatBs(bonosQuincenalBs));
       if (totalHorasExtras > 0) {
-        addConcepto(`Horas Extras (${totalHorasExtras} hs x $${valorHoraUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD)`, 'Salarial', formatBs(montoHorasExtrasBs));
+        addConcepto(`Horas Extras (${totalHorasExtras} hs x $${valorHoraUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD)`, 'No salarial', formatBs(montoHorasExtrasBs));
       }
       if (bonoNum > 0) {
         addConcepto('Ajuste manual / Bono extra', 'No salarial', formatBs(bonoNum));
