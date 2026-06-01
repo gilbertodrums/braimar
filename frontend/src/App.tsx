@@ -801,19 +801,11 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
       doc.setTextColor(180, 180, 190);
       doc.text(`Generado el ${fechaHoy}  ·  La Casa del Encaje`, W / 2, 287, { align: 'center' });
 
-      // ── GUARDAR ────────────────────────────────────────────────────────
+      // ── GUARDAR PAGO EN SERVIDOR ────────────────────────────────────────
       const nombreArchivo = `recibo_${colSnap.nombre.toLowerCase()}_${colSnap.apellido.toLowerCase()}_${desdeSnap}_${hastaSnap}.pdf`.replace(/\s+/g, '_');
       const pdfBase64 = doc.output('datauristring').split(',')[1];
-      doc.save(nombreArchivo);
 
-      // ── RESET CAMPOS ───────────────────────────────────────────────────
-      setSelectedId('');
-      setDesde(defaultDesde);
-      setHasta(defaultHasta);
-      setBono('');
-
-      // ── GUARDAR PAGO EN SERVIDOR ────────────────────────────────────────
-      fetch('/pagos', {
+      const resPago = await fetch('/pagos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -824,7 +816,21 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
           total: totalSnap,
           pdf_base64: pdfBase64,
         }),
-      }).catch(() => {});
+      });
+
+      if (!resPago.ok) {
+        const errorData = await resPago.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'No se pudo guardar el registro de pago en el servidor. Asegúrate de tener SUPABASE_SERVICE_KEY configurado en tu servidor backend.');
+      }
+
+      // ── GUARDAR LOCALMENTE (DESCARGAR PDF) ────────────────────────────────
+      doc.save(nombreArchivo);
+
+      // ── RESET CAMPOS ───────────────────────────────────────────────────
+      setSelectedId('');
+      setDesde(defaultDesde);
+      setHasta(defaultHasta);
+      setBono('');
 
       // ── ENVIAR CORREO ──────────────────────────────────────────────────
       if (colSnap.correo) {
@@ -849,8 +855,8 @@ function GenerarPagoView({ onBack, bcvRate }: { onBack: () => void; bcvRate: num
           setTimeout(() => setExitoEnvio(null), 5000);
         }
       }
-    } catch (e) {
-      setError('Error al generar el PDF. Intenta de nuevo.');
+    } catch (e: any) {
+      setError(e.message || 'Error al generar el PDF. Intenta de nuevo.');
       console.error(e);
     } finally {
       setGenerando(false);
