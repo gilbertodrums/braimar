@@ -70,6 +70,52 @@ HORAS_EXTRAS_FILE = Path(__file__).parent / "horas_extras.json"
 COLABORADORES_FILE = Path(__file__).parent / "colaboradores.json"
 
 DEFAULT_PIN = "052026"
+PEPPER_KEY = os.getenv("PEPPER_KEY", "braimar_default_pepper_secure_string_98765")
+
+# Global in-memory cache for active session ID
+_active_session_id = None
+
+def get_active_session_id() -> Optional[str]:
+    global _active_session_id
+    if _active_session_id:
+        return _active_session_id
+    
+    # Try Supabase
+    try:
+        resp = supabase.table("settings").select("value").eq("key", "active_session_id").execute()
+        if resp.data:
+            _active_session_id = resp.data[0]["value"]
+            return _active_session_id
+    except Exception as e:
+        logging.error(f"Error reading active_session_id from Supabase: {e}")
+        
+    # Try local file fallback
+    try:
+        path = Path(__file__).parent / "session.json"
+        if path.exists():
+            _active_session_id = path.read_text(encoding="utf-8").strip()
+            return _active_session_id
+    except Exception as e:
+        logging.error(f"Error reading local session.json: {e}")
+        
+    return None
+
+def set_active_session_id(session_id: str):
+    global _active_session_id
+    _active_session_id = session_id
+    
+    # Try Supabase
+    try:
+        supabase.table("settings").upsert({"key": "active_session_id", "value": session_id}).execute()
+    except Exception as e:
+        logging.error(f"Error saving active_session_id to Supabase: {e}")
+        
+    # Try local file fallback
+    try:
+        path = Path(__file__).parent / "session.json"
+        path.write_text(session_id, encoding="utf-8")
+    except Exception as e:
+        logging.error(f"Error saving local session.json: {e}")
 
 # Challenge temporal en memoria (sistema monousuario)
 _wn_challenge: dict = {}  # {"value": bytes, "expires": float}
@@ -171,7 +217,11 @@ def get_pin_hash() -> bytes:
             return resp.data[0]["value"].encode("utf-8")
     except Exception as e:
         logging.error(f"Error reading pin_hash from Supabase: {e}")
-    default_hash = bcrypt.hashpw(DEFAULT_PIN.encode(), bcrypt.gensalt(12))
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Servicio de base de datos no disponible temporalmente"
+        )
+    default_hash = bcrypt.hashpw(f"{DEFAULT_PIN}{PEPPER_KEY}".encode('utf-8'), bcrypt.gensalt(12))
     set_pin_hash(default_hash)
     return default_hash
 
@@ -182,12 +232,10 @@ def set_pin_hash(new_hash: bytes):
         logging.error(f"Error saving pin_hash to Supabase: {e}")
 
 def get_real_ip(request: Request) -> str:
-    # Cloudflare passes the real client IP in CF-Connecting-IP
-    for header in ("CF-Connecting-IP", "X-Real-IP", "X-Forwarded-For"):
-        val = request.headers.get(header)
-        if val:
-            return val.split(",")[0].strip()
-    return request.client.host or "unknown"
+    # Confía en request.client.host de forma segura cuando hay proxies configurados (como Render/Vercel)
+    if request.client and request.client.host:
+        return request.client.host
+    return "unknown"
 
 limiter = Limiter(key_func=get_real_ip)
 
@@ -333,10 +381,26 @@ async def check_session(braimar_session: Optional[str] = Cookie(default=None)):
 @app.post("/login")
 @limiter.limit("10/minute")
 async def login(request: Request, response: Response, payload: PinRequest):
+    current_hash = get_pin_hash()
+    
+    # 1. Intentamos verificar con Pepper (pimienta)
     try:
-        is_valid = bcrypt.checkpw(payload.pin.encode('utf-8'), get_pin_hash())
+        is_valid = bcrypt.checkpw(f"{payload.pin}{PEPPER_KEY}".encode('utf-8'), current_hash)
     except Exception:
         is_valid = False
+        
+    # 2. Si no es válido, intentamos el chequeo legado (sin Pepper) para migración
+    if not is_valid:
+        try:
+            is_legacy_valid = bcrypt.checkpw(payload.pin.encode('utf-8'), current_hash)
+            if is_legacy_valid:
+                # Migración transparente al nuevo PIN encriptado con Pepper
+                new_peppered_hash = bcrypt.hashpw(f"{payload.pin}{PEPPER_KEY}".encode('utf-8'), bcrypt.gensalt(12))
+                set_pin_hash(new_peppered_hash)
+                is_valid = True
+                logging.info("PIN migrado exitosamente con la nueva encriptación (Pepper).")
+        except Exception as e:
+            logging.error(f"Error durante migración de PIN: {e}")
 
     if not is_valid:
         raise HTTPException(
@@ -344,8 +408,12 @@ async def login(request: Request, response: Response, payload: PinRequest):
             detail="Unauthorized"
         )
 
+    # Generar un session_id único y registrarlo como sesión activa
+    session_id = str(uuid.uuid4())
+    set_active_session_id(session_id)
+
     expire = datetime.datetime.utcnow() + datetime.timedelta(hours=12)
-    token_data = {"sub": "braimar_admin", "exp": expire}
+    token_data = {"sub": "braimar_admin", "session_id": session_id, "exp": expire}
     encoded_jwt = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
 
     response.set_cookie(
@@ -781,9 +849,13 @@ async def wn_auth_complete(request: Request, response: Response):
     _save_webauthn(json.dumps(cred_data))
     _wn_challenge.clear()
 
+    # Generar un session_id único y registrarlo como sesión activa
+    session_id = str(uuid.uuid4())
+    set_active_session_id(session_id)
+
     # Crear sesión JWT
     expire      = datetime.datetime.utcnow() + datetime.timedelta(hours=12)
-    encoded_jwt = jwt.encode({"sub": "braimar_admin", "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode({"sub": "braimar_admin", "session_id": session_id, "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
     response.set_cookie(
         key="braimar_session", value=encoded_jwt,
         httponly=True, secure=(ENVIRONMENT == "production"),
@@ -858,7 +930,14 @@ def verify_session(token: Optional[str]) -> bool:
         return False
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload.get("sub") == "braimar_admin"
+        if payload.get("sub") != "braimar_admin":
+            return False
+        
+        token_session_id = payload.get("session_id")
+        active_session_id = get_active_session_id()
+        if active_session_id is None:
+            return True
+        return token_session_id == active_session_id
     except Exception:
         return False
 
@@ -887,10 +966,22 @@ async def change_pin(
             detail="El nuevo PIN debe tener exactamente 6 dígitos"
         )
 
+    current_hash = get_pin_hash()
+    
+    # 1. Intentamos verificar con Pepper
     try:
-        is_valid = bcrypt.checkpw(payload.current_pin.encode('utf-8'), get_pin_hash())
+        is_valid = bcrypt.checkpw(f"{payload.current_pin}{PEPPER_KEY}".encode('utf-8'), current_hash)
     except Exception:
         is_valid = False
+
+    # 2. Si falla, probamos el chequeo legado (sin Pepper) para migración
+    if not is_valid:
+        try:
+            is_legacy_valid = bcrypt.checkpw(payload.current_pin.encode('utf-8'), current_hash)
+            if is_legacy_valid:
+                is_valid = True
+        except Exception:
+            pass
 
     if not is_valid:
         raise HTTPException(
@@ -898,7 +989,7 @@ async def change_pin(
             detail="El PIN actual es incorrecto"
         )
 
-    new_hash = bcrypt.hashpw(payload.new_pin.encode('utf-8'), bcrypt.gensalt(12))
+    new_hash = bcrypt.hashpw(f"{payload.new_pin}{PEPPER_KEY}".encode('utf-8'), bcrypt.gensalt(12))
     set_pin_hash(new_hash)
 
     return {"status": "ok"}
